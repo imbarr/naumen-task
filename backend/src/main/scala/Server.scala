@@ -22,7 +22,10 @@ class Server(book: InMemoryBook)(implicit log: Logger) extends HttpApp {
         path(IntNumber) {
           phonebookEntryRoute
         }
-    }
+    } ~
+      path("ffoknit") {
+        complete(StatusCodes.ImATeapot)
+      }
 
   def phonebookRoute: Route =
     post {
