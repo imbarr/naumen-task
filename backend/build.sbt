@@ -20,7 +20,7 @@ libraryDependencies ++= Seq(
 
   "com.github.pureconfig" %% "pureconfig" % "0.10.1",
 
-//  "org.slf4j" % "slf4j-simple" % "1.6.4",
+  "org.slf4j" % "slf4j-simple" % "1.6.4",
 
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
 
