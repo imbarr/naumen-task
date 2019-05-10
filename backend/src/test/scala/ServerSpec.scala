@@ -1,6 +1,7 @@
 import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpRequest, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
+import com.typesafe.scalalogging.Logger
 import data.{BookEntry, BookEntryWithId, NameWrapper, PhoneNumberWrapper}
 import org.scalatest.{Assertion, BeforeAndAfter, FlatSpec}
 import storage.InMemoryBook
@@ -8,6 +9,8 @@ import data.Implicits._
 import util.CirceMarshalling._
 
 class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter {
+  implicit val log = Logger("server-spec")
+
   val entries = List(
     BookEntry("John Doe", "88005553535"),
     BookEntry("Jane Doe", "+79223101010"),
