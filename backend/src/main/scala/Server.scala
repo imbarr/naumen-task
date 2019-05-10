@@ -1,12 +1,19 @@
 import akka.http.scaladsl.model.headers.Location
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.{HttpApp, Route}
+import akka.http.scaladsl.server.{ExceptionHandler, HttpApp, RejectionHandler, Route}
+import com.typesafe.scalalogging.Logger
 import data.Implicits._
 import data._
 import storage.InMemoryBook
 import util.CirceMarshalling._
 
-class Server(book: InMemoryBook) extends HttpApp {
+class Server(book: InMemoryBook)(implicit log: Logger) extends HttpApp {
+  implicit def exceptionHandler: ExceptionHandler = ExceptionHandler {
+    case error =>
+      log.error("Error occurred while processing request.", error)
+      complete(StatusCodes.InternalServerError)
+  }
+
   override val routes: Route =
     pathPrefix("phonebook") {
       pathEndOrSingleSlash {
