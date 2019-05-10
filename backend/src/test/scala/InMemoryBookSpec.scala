@@ -29,43 +29,35 @@ class InMemoryBookSpec extends FlatSpec with Matchers with BeforeAndAfter {
     assert(ids.size == entries.length)
   }
 
-  it should "change phone number" in {
-    val added = addEntries(entries)
-    val entry = added.head
+  it should "change phone number" in changeEntriesTest { entry =>
     val newPhoneNumber = entry.phoneNumber + "0"
     val changedEntry = BookEntryWithId(entry.id, entry.name, newPhoneNumber)
     val success = book.changePhoneNumber(entry.id, newPhoneNumber)
     assert(success)
-    assert((book.getAll.toSet diff added.toSet) == Set(changedEntry))
+    Set(changedEntry)
   }
 
-  it should "change name" in {
-    val added = addEntries(entries)
-    val entry = added.head
+  it should "change name" in changeEntriesTest { entry =>
     val newName = entry.name + "0"
     val changedEntry = BookEntryWithId(entry.id, newName, entry.phoneNumber)
     val success = book.changeName(entry.id, newName)
     assert(success)
-    assert((book.getAll.toSet diff added.toSet) == Set(changedEntry))
+    Set(changedEntry)
   }
 
-  it should "replace entry" in {
-    val added = addEntries(entries)
-    val entry = added.head
+  it should "replace entry" in changeEntriesTest { entry =>
     val newName = entry.name + "0"
     val newPhoneNumber = entry.phoneNumber + "0"
     val changedEntry = BookEntryWithId(entry.id, newName, newPhoneNumber)
     val success = book.replace(entry.id, newName, newPhoneNumber)
     assert(success)
-    assert((book.getAll.toSet diff added.toSet) == Set(changedEntry))
+    Set(changedEntry)
   }
 
-  it should "remove entry" in {
-    val added = addEntries(entries)
-    val entry = added.head
+  it should "remove entry" in changeEntriesTest { entry =>
     val success = book.remove(entry.id)
     assert(success)
-    assert((added.toSet diff book.getAll.toSet) == Set(entry))
+    Set.empty
   }
 
   it should "find elements by name substring" in {
@@ -92,7 +84,16 @@ class InMemoryBookSpec extends FlatSpec with Matchers with BeforeAndAfter {
     assert(added.toSet == book.getAll.toSet)
   }
 
-  def addEntries(entries: List[BookEntry]): List[BookEntryWithId] =
+  private def changeEntriesTest(operation: BookEntryWithId => Set[BookEntryWithId]): Assertion = {
+    val oldEntries = addEntries(entries).toSet
+    val entry = oldEntries.head
+    val changedEntries = operation(entry)
+    val newEntries = book.getAll.toSet
+    assert((newEntries diff oldEntries) == changedEntries)
+    assert((oldEntries diff newEntries) == Set(entry))
+  }
+
+  private def addEntries(entries: List[BookEntry]): List[BookEntryWithId] =
     entries.map(entry => {
       val id = book.add(entry)
       BookEntryWithId(id, entry.name, entry.phoneNumber)

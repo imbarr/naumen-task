@@ -1,4 +1,5 @@
 package storage
+
 import data.{BookEntry, BookEntryWithId}
 
 class InMemoryBook {
@@ -42,7 +43,9 @@ class InMemoryBook {
     }
 
   def findByNameSubstring(substring: String): List[BookEntryWithId] =
-    map.filter{_._2.name.contains(substring)}.map(join).toList
+    map.filter {
+      _._2.name.contains(substring)
+    }.map(join).toList
 
   def findByPhoneNumberSubstring(substring: String): List[BookEntryWithId] =
     map.filter(_._2.phoneNumber.contains(substring)).map(join).toList

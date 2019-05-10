@@ -1,8 +1,8 @@
-import akka.http.scaladsl.model.{ContentTypes, HttpEntity, StatusCodes}
+import akka.http.scaladsl.model.{ContentTypes, HttpEntity, HttpRequest, StatusCodes}
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import data.{BookEntry, BookEntryWithId, NameWrapper, PhoneNumberWrapper}
-import org.scalatest.{BeforeAndAfter, FlatSpec}
+import org.scalatest.{Assertion, BeforeAndAfter, FlatSpec}
 import storage.InMemoryBook
 import data.Implicits._
 import util.CirceMarshalling._
@@ -76,10 +76,9 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter {
       Patch("/phonebook/" + id, PhoneNumberWrapper("New name"))
     )
 
-    for (request <- requests)
-      request ~> server.routes ~> check {
-        assert(status == StatusCodes.OK)
-      }
+    testForAll(requests) {
+      assert(status == StatusCodes.OK)
+    }
   }
 
   it should "delete entry" in {
@@ -96,10 +95,9 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter {
       Delete("/phonebook/" + id)
     )
 
-    for (request <- requests)
-      request ~> Route.seal(server.routes) ~> check {
-        assert(status == StatusCodes.NotFound)
-      }
+    testForAll(requests) {
+      assert(status == StatusCodes.NotFound)
+    }
   }
 
   it should "return 405 for not allowed methods" in {
@@ -111,10 +109,9 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter {
       Put("/phonebook/" + id)
     )
 
-    for (request <- requests)
-      request ~> Route.seal(server.routes) ~> check {
-        assert(status == StatusCodes.MethodNotAllowed)
-      }
+    testForAll(requests) {
+      assert(status == StatusCodes.MethodNotAllowed)
+    }
   }
 
   it should "return 400 for incorrect requests" in {
@@ -126,9 +123,14 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter {
       Patch("/phonebook/" + id, "{\"some\": \"json\"}")
     )
 
+    testForAll(requests) {
+      assert(status == StatusCodes.BadRequest)
+    }
+  }
+
+  private def testForAll(requests: List[HttpRequest])(assertion: => Assertion): Unit =
     for (request <- requests)
       request ~> Route.seal(server.routes) ~> check {
-        assert(status == StatusCodes.BadRequest)
+        assertion
       }
-  }
 }

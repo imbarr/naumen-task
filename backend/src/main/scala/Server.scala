@@ -1,67 +1,76 @@
 import akka.http.scaladsl.model.headers.Location
-import akka.http.scaladsl.model.{HttpMethods, HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.{HttpApp, MethodRejection, Route}
-import data._
+import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
+import akka.http.scaladsl.server.{HttpApp, Route}
 import data.Implicits._
+import data._
 import storage.InMemoryBook
 import util.CirceMarshalling._
 
-class Server(book: InMemoryBook) extends HttpApp{
-  override def routes: Route =
+class Server(book: InMemoryBook) extends HttpApp {
+  override val routes: Route =
     pathPrefix("phonebook") {
       pathEndOrSingleSlash {
-        post {
-          entity(as[BookEntry]) {entry =>
-            val id = book.add(entry)
-            complete(HttpResponse(StatusCodes.Created, List(Location("/phonebook/" + id))))
-          }
-        } ~
-        get {
-          parameters('nameSubstring) { substring =>
-            complete(book.findByNameSubstring(substring))
-          } ~
-          parameters('phoneSubstring) { substring =>
-            complete(book.findByPhoneNumberSubstring(substring))
-          } ~
-          complete(book.getAll)
-        }
+        phonebookRoute
       } ~
-      path(IntNumber) {
-        id =>
-          patch {
-            entity(as[BookEntry]) { entry =>
-              complete {
-                if(book.replace(id, entry.name, entry.phoneNumber))
-                  HttpResponse(StatusCodes.OK)
-                else
-                  HttpResponse(StatusCodes.NotFound)
-              }
-            } ~
-            entity(as[NameWrapper]) { wrapper =>
-              complete {
-                if(book.changeName(id, wrapper.name))
-                  HttpResponse(StatusCodes.OK)
-                else
-                  HttpResponse(StatusCodes.NotFound)
-              }
-            } ~
-            entity(as[PhoneNumberWrapper]) { wrapper =>
-              complete {
-                if(book.changePhoneNumber(id, wrapper.phoneNumber))
-                  HttpResponse(StatusCodes.OK)
-                else
-                  HttpResponse(StatusCodes.NotFound)
-              }
-            }
-          } ~
-          delete {
-            complete {
-              if(book.remove(id))
-                HttpResponse(StatusCodes.OK)
-              else
-                HttpResponse(StatusCodes.NotFound)
-            }
-          }
+        path(IntNumber) {
+          phonebookEntryRoute
         }
     }
+
+  def phonebookRoute: Route =
+    post {
+      createEntry
+    } ~
+      get {
+        getEntries
+      }
+
+  def phonebookEntryRoute(id: Int): Route =
+    patch {
+      modifyEntry(id)
+    } ~
+      delete {
+        predicate {
+          book.remove(id)
+        }
+      }
+
+  val createEntry: Route =
+    entity(as[BookEntry]) { entry =>
+      val id = book.add(entry)
+      val headers = List(Location("/phonebook/" + id))
+      complete(HttpResponse(StatusCodes.Created, headers))
+    }
+
+  val getEntries: Route =
+    parameters('nameSubstring) { substring =>
+      complete(book.findByNameSubstring(substring))
+    } ~
+      parameters('phoneSubstring) { substring =>
+        complete(book.findByPhoneNumberSubstring(substring))
+      } ~
+      complete(book.getAll)
+
+  def modifyEntry(id: Int): Route =
+    entity(as[BookEntry]) { entry =>
+      predicate {
+        book.replace(id, entry.name, entry.phoneNumber)
+      }
+    } ~
+      entity(as[NameWrapper]) { wrapper =>
+        predicate {
+          book.changeName(id, wrapper.name)
+        }
+      } ~
+      entity(as[PhoneNumberWrapper]) { wrapper =>
+        predicate {
+          book.changePhoneNumber(id, wrapper.phoneNumber)
+        }
+      }
+
+  def predicate(predicate: => Boolean): Route =
+    if (predicate)
+      complete(StatusCodes.OK)
+    else
+      reject()
 }
