@@ -1,3 +1,4 @@
+import akka.actor.ActorSystem
 import com.typesafe.scalalogging.Logger
 import config.Config
 import storage.InMemoryBook
@@ -5,6 +6,7 @@ import pureconfig.generic.auto._
 
 object Main extends App {
   implicit val log = Logger("naumen-task")
+  implicit val system = ActorSystem("naumen-task")
 
   pureconfig.loadConfig[Config] match {
     case Left(_) =>

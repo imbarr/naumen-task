@@ -16,8 +16,7 @@ import util.CirceMarshalling._
 
 import scala.concurrent.Future
 
-class Server(book: Book)(implicit log: Logger) {
-  implicit val system = ActorSystem("naumen-task")
+class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
   implicit val materializer = ActorMaterializer()
 
   def start(config: ServerConfig): Future[ServerBinding] =
