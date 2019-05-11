@@ -1,20 +1,35 @@
+import akka.actor.ActorSystem
+import akka.http.scaladsl.Http
+import akka.http.scaladsl.Http.ServerBinding
 import akka.http.scaladsl.model.headers.Location
 import akka.http.scaladsl.model.{HttpResponse, StatusCodes}
-import akka.http.scaladsl.server.{ExceptionHandler, HttpApp, RejectionHandler, Route}
+import akka.http.scaladsl.server.Directives._
+import akka.http.scaladsl.server.RouteResult.route2HandlerFlow
+import akka.http.scaladsl.server.{ExceptionHandler, Route}
+import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.Logger
+import config.ServerConfig
 import data.Implicits._
 import data._
 import storage.InMemoryBook
 import util.CirceMarshalling._
 
-class Server(book: InMemoryBook)(implicit log: Logger) extends HttpApp {
+import scala.concurrent.Future
+
+class Server(book: InMemoryBook)(implicit log: Logger) {
+  implicit val system = ActorSystem("naumen-task")
+  implicit val materializer = ActorMaterializer()
+
+  def start(config: ServerConfig): Future[ServerBinding] =
+    Http().bindAndHandle(route2HandlerFlow(routes), config.interface, config.port)
+
   implicit def exceptionHandler: ExceptionHandler = ExceptionHandler {
     case error =>
       log.error("Error occurred while processing request.", error)
       complete(StatusCodes.InternalServerError)
   }
 
-  override val routes: Route =
+  def routes: Route =
     pathPrefix("phonebook") {
       pathEndOrSingleSlash {
         phonebookRoute

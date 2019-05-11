@@ -12,6 +12,8 @@ object Main extends App {
       System.exit(1)
     case Right(config) =>
       val book = new InMemoryBook()
-      new Server(book).startServer(config.server.interface, config.server.port)
+      log.info("Starting server...")
+      new Server(book).start(config.server)
+      log.info(s"Server is up on ${config.server.interface}:${config.server.port}")
   }
 }
