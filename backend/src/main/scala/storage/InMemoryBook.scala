@@ -2,7 +2,7 @@ package storage
 
 import data.{BookEntry, BookEntryWithId}
 
-class InMemoryBook {
+class InMemoryBook extends Book {
   private var map = Map[Int, BookEntry]()
   private var lastId = 0
 

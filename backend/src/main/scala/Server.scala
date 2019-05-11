@@ -11,12 +11,12 @@ import com.typesafe.scalalogging.Logger
 import config.ServerConfig
 import data.Implicits._
 import data._
-import storage.InMemoryBook
+import storage.Book
 import util.CirceMarshalling._
 
 import scala.concurrent.Future
 
-class Server(book: InMemoryBook)(implicit log: Logger) {
+class Server(book: Book)(implicit log: Logger) {
   implicit val system = ActorSystem("naumen-task")
   implicit val materializer = ActorMaterializer()
 
@@ -94,8 +94,10 @@ class Server(book: InMemoryBook)(implicit log: Logger) {
       }
 
   def predicate(predicate: => Boolean): Route =
-    if (predicate)
-      complete(StatusCodes.OK)
-    else
-      reject()
+    Route.seal {
+      if (predicate)
+        complete(StatusCodes.OK)
+      else
+        reject()
+    }
 }
