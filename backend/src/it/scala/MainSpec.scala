@@ -2,16 +2,16 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
-import akka.http.scaladsl.marshalling.{Marshal, ToEntityMarshaller}
 import akka.http.scaladsl.model._
 import akka.stream.ActorMaterializer
 import config.Config
 import data.Implicits._
 import data.{BookEntry, BookEntryWithId}
+import io.circe.Encoder
 import io.circe.parser.parse
+import io.circe.syntax.EncoderOps
 import org.scalatest.FlatSpec
 import pureconfig.generic.auto._
-import util.CirceMarshalling._
 
 import scala.concurrent.Await
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -36,9 +36,10 @@ class MainSpec extends FlatSpec {
     )
 
     for (entry <- entries) {
-      assert(send(HttpMethods.POST, uri, entry).status == StatusCodes.Created)
+      val response = send(HttpRequest(HttpMethods.POST, uri, entity = toEntity(entry)))
+      assert(response.status == StatusCodes.Created)
     }
-    val response3 = send(HttpMethods.GET, uri, HttpEntity.Empty)
+    val response3 = send(HttpRequest(HttpMethods.GET, uri))
     assert(response3.status == StatusCodes.OK)
     val strictFuture = response3.entity.toStrict(FiniteDuration(10, TimeUnit.SECONDS))
     val content = Await.result(strictFuture, Duration.Inf).data.utf8String
@@ -49,9 +50,11 @@ class MainSpec extends FlatSpec {
     assert(entries.subsetOf(withoutIds.toSet))
   }
 
-  private def send[T](method: HttpMethod, uri: String, content: T)(implicit m: ToEntityMarshaller[T]): HttpResponse = {
-    val entity = Marshal(content).to[RequestEntity]
-    val responseFuture = entity.flatMap(entity => Http().singleRequest(HttpRequest(method, uri, entity = entity)))
+  private def send(request: HttpRequest): HttpResponse = {
+    val responseFuture = Http().singleRequest(request)
     Await.result(responseFuture, Duration.Inf)
   }
+
+  private def toEntity[T: Encoder](content: T): RequestEntity =
+    HttpEntity(ContentTypes.`application/json`, content.asJson.noSpaces)
 }

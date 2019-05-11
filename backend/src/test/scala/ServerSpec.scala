@@ -33,6 +33,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter {
   "Server" should "return all phonebook entries" in
     Get("/phonebook") ~> server.routes ~> check {
       assert(status == StatusCodes.OK)
+
       val result = responseAs[List[BookEntryWithId]]
       val withoutIds = result.map(entry => BookEntry(entry.name, entry.phoneNumber))
       assert(withoutIds == entries)
