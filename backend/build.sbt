@@ -20,6 +20,8 @@ libraryDependencies ++= Seq(
 
   "com.github.pureconfig" %% "pureconfig" % "0.10.1",
 
+  "com.typesafe.slick" %% "slick" % "3.3.0",
+
   "org.slf4j" % "slf4j-simple" % "1.6.4",
 
   "com.typesafe.scala-logging" %% "scala-logging" % "3.9.2",
@@ -27,5 +29,7 @@ libraryDependencies ++= Seq(
   "org.scalactic" %% "scalactic" % "3.0.5",
   "org.scalatest" %% "scalatest" % "3.0.5" % "test",
 
-  "org.scalamock" %% "scalamock" % "4.1.0" % Test
+  "org.scalamock" %% "scalamock" % "4.1.0" % Test,
+
+  "org.flywaydb" % "flyway-core" % "5.2.4"
 )
