@@ -1,6 +1,6 @@
 import akka.http.scaladsl.model.Uri.Query
 import akka.http.scaladsl.model._
-import akka.http.scaladsl.model.headers.Location
+import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.scalalogging.Logger
@@ -34,6 +34,24 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       assert(status == StatusCodes.OK)
       val result = responseAs[List[BookEntryWithId]]
       assert(result == entries)
+    }
+  }
+
+  it should "return range of entries" in {
+    val start = 11
+    val end = 12
+    val entries = List(
+      BookEntryWithId(22, "John", "343453"),
+      BookEntryWithId(11, "Boris", "3354354")
+    )
+    book.getRange _ expects (start, end) returning Future.successful(entries)
+    val uri = Uri("/phonebook").withQuery(Query("start" -> start.toString, "end" -> end.toString))
+    Get(uri) ~> server.routes ~> check {
+      assert(status == StatusCodes.OK)
+      val result = responseAs[List[BookEntryWithId]]
+      assert(result == entries)
+      val expectedHeader = `Content-Range`(RangeUnits.Other("entries"), ContentRange(start, end))
+      assert(header("Content-Range").contains(expectedHeader))
     }
   }
 
@@ -142,7 +160,9 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       Post("/phonebook", HttpEntity(ContentTypes.`application/json`, "")),
       Post("/phonebook", NameWrapper("name")),
       Patch(s"/phonebook/$id", HttpEntity(ContentTypes.`application/json`, "{\"malformed\": json}")),
-      Patch(s"/phonebook/$id", "{\"some\": \"json\"}")
+      Patch(s"/phonebook/$id", "{\"some\": \"json\"}"),
+      Get(Uri("/phonebook").withQuery(Query("start" -> "11", "end" -> "lul"))),
+      Get(Uri("/phonebook").withQuery(Query("start" -> "32", "end" -> "22")))
     )
 
     testForAll(requests) {
