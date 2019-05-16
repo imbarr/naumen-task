@@ -18,6 +18,7 @@ import scala.concurrent.Future
 
 class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
   implicit val materializer = ActorMaterializer()
+  implicit val executionContext = materializer.executionContext
 
   def start(config: ServerConfig): Future[ServerBinding] =
     Http().bindAndHandle(route2HandlerFlow(routes), config.interface, config.port)
@@ -61,9 +62,10 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
 
   val createEntry: Route =
     entity(as[BookEntry]) { entry =>
-      val id = book.add(entry)
-      val headers = List(Location("/phonebook/" + id))
-      complete(HttpResponse(StatusCodes.Created, headers))
+      val futureId = book.add(entry)
+      val futureHeaders = futureId.map(id => List(Location("/phonebook/" + id)))
+      val futureResponse = futureHeaders.map(headers => HttpResponse(StatusCodes.Created, headers))
+      complete(futureResponse)
     }
 
   val getEntries: Route =
@@ -92,11 +94,13 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
         }
       }
 
-  def predicate(predicate: => Boolean): Route =
+  def predicate(predicate: Future[Boolean]): Route =
     Route.seal {
-      if (predicate)
-        complete(StatusCodes.OK)
-      else
-        reject()
+      onSuccess(predicate) { success =>
+        if (success)
+          complete(StatusCodes.OK)
+        else
+          reject()
+      }
     }
 }
