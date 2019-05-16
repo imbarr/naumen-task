@@ -26,6 +26,30 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
       assert(added.toSet subsetOf all)
     }
 
+    it should "get range of entries" in {
+      val all = await(book.getAll).toSet
+      val single = await(book.getRange(0, 0))
+      assert(single.size == 1)
+      val entireRange = await(book.getRange(0, all.size - 1))
+      assert(entireRange.toSet == all)
+      val overflow = await(book.getRange(0, all.size + 22))
+      assert(overflow.toSet == all)
+      val middle = all.size / 2
+      val firstHalf = await(book.getRange(0, middle)).toSet
+      val secondHalf = await(book.getRange(middle + 1, all.size - 1)).toSet
+      assert((firstHalf intersect secondHalf) == Set.empty)
+      assert((firstHalf union secondHalf) == all)
+    }
+
+    it should "throw exception on invalid range parameters" in {
+      val ranges = List((-2, 3), (10, 9), (-2, -3))
+      for(range <- ranges) {
+        assertThrows[IllegalArgumentException]{
+          await(book.getRange _ tupled range)
+        }
+      }
+    }
+
     it should "assign different ids" in {
       val ids = added.map(_.id).toSet
       assert(ids.size == entries.length)

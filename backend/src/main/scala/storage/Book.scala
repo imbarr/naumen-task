@@ -9,6 +9,8 @@ trait Book {
 
   def getAll: Future[Seq[BookEntryWithId]]
 
+  def getRange(start: Int, end: Int): Future[Seq[BookEntryWithId]]
+
   def changePhoneNumber(id: Int, phoneNumber: String): Future[Boolean]
 
   def changeName(id: Int, name: String): Future[Boolean]

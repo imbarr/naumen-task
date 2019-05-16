@@ -19,6 +19,12 @@ class InMemoryBook extends Book {
     Future.successful(result)
   }
 
+  def getRange(start: Int, end: Int): Future[List[BookEntryWithId]] = {
+    require(start >= 0 && end >= 0 && start <= end)
+    val result = map.slice(start, end + 1).map(join).toList
+    Future.successful(result)
+  }
+
   override def changePhoneNumber(id: Int, phoneNumber: String): Future[Boolean] =
     change(id, entry => BookEntry(entry.name, phoneNumber))
 
