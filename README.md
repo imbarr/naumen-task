@@ -4,10 +4,17 @@
 
 * Java SDK 10
 * sbt 1.0
+* SQL Server 2017 (достаточно Express Edition)
 
 ### Инструкции по запуску
-1) Измените настройки в `/src/main/resources/application.conf`
-2) `sbt run`
+1) Настройте приложение в `/src/main/resources/application.conf`. Пример настроек смотрите в файле `example-application.conf`
+2) Создайте базу данных для приложения, например, с помощью `sqlcmd`:
+   ```
+   sqlcmd
+   1> create database naumen
+   2> go
+   ```
+3) `sbt run`
 
 ### Примеры использования
 
@@ -102,10 +109,6 @@ GET /phonebook?phoneSubstring=%2B7922
 DELETE /phonebook/22
 ```
 
-```
-200 OK
-```
-
 #### Изменить телефон или имя
 
 ```http request
@@ -117,6 +120,18 @@ PATCH /phonebook/22
 }
 ```
 
+```http request
+PATCH /phonebook/22
+
+{
+  "name": "John"
+}
 ```
-200 OK
+
+```http request
+PATCH /phonebook/22
+
+{
+  "phoneNumber": "88005553535"
+}
 ```
