@@ -11,8 +11,10 @@ import org.scalatest.{Assertion, BeforeAndAfter, FlatSpec}
 import storage.Book
 import util.CirceMarshalling._
 
+import scala.concurrent.Future
+
 class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter with MockFactory {
-  implicit val log = Logger("server-spec")
+  implicit val log = Logger("naumen-task-test")
 
   var book: Book = _
   var server: Server = _
@@ -27,7 +29,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       BookEntryWithId(22, "John", "343453"),
       BookEntryWithId(11, "Boris", "3354354")
     )
-    book.getAll _ expects() returning entries
+    book.getAll _ expects() returning Future.successful(entries)
     Get("/phonebook") ~> server.routes ~> check {
       assert(status == StatusCodes.OK)
       val result = responseAs[List[BookEntryWithId]]
@@ -38,7 +40,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
   it should "create new phonebook entry" in {
     val entry = BookEntry("Bob", "dgfdgfdf")
     val id = 122
-    book.add _ expects entry returning id
+    book.add _ expects entry returning Future.successful(id)
     Post("/phonebook", entry) ~> server.routes ~> check {
       assert(status == StatusCodes.Created)
       assert(header("Location").contains(Location(s"/phonebook/$id")))
@@ -51,7 +53,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       BookEntryWithId(11, "John Doe", "456456"),
       BookEntryWithId(22, "Jane Doe", "232323")
     )
-    book.findByNameSubstring _ expects substring returning foundEntries
+    book.findByNameSubstring _ expects substring returning Future.successful(foundEntries)
 
     val uri = Uri("/phonebook").withQuery(Query("nameSubstring" -> substring))
     Get(uri) ~> server.routes ~> check {
@@ -67,7 +69,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       BookEntryWithId(11, "John Doe", "+7456456"),
       BookEntryWithId(22, "Jane Doe", "+7232323")
     )
-    book.findByPhoneNumberSubstring _ expects substring returning foundEntries
+    book.findByPhoneNumberSubstring _ expects substring returning Future.successful(foundEntries)
 
     val uri = Uri("/phonebook").withQuery(Query("phoneSubstring" -> substring))
     Get(uri) ~> server.routes ~> check {
@@ -81,9 +83,9 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
     val id = 11
     val name = "name"
     val phone = "8995235523"
-    book.replace _ expects(id, name, phone) returning true noMoreThanOnce()
-    book.changeName _ expects(id, name) returning true noMoreThanOnce()
-    book.changePhoneNumber _ expects(id, phone) returning true noMoreThanOnce()
+    book.replace _ expects(id, name, phone) returning Future.successful(true) noMoreThanOnce()
+    book.changeName _ expects(id, name) returning Future.successful(true) noMoreThanOnce()
+    book.changePhoneNumber _ expects(id, phone) returning Future.successful(true) noMoreThanOnce()
     val requests = List(
       Patch(s"/phonebook/$id", BookEntry(name, phone)),
       Patch(s"/phonebook/$id", NameWrapper(name)),
@@ -97,7 +99,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
 
   it should "delete entry" in {
     val id = 11
-    book.remove _ expects id returning true
+    book.remove _ expects id returning Future.successful(true)
     Delete(s"/phonebook/$id") ~> server.routes ~> check {
       assert(status == StatusCodes.OK)
     }
@@ -107,8 +109,8 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
     val id = 20
     val name = "name"
     val phone = "345353"
-    book.remove _ expects id returning false anyNumberOfTimes()
-    book.replace _ expects(id, name, phone) returning false anyNumberOfTimes()
+    book.remove _ expects id returning Future.successful(false) anyNumberOfTimes()
+    book.replace _ expects(id, name, phone) returning Future.successful(false) anyNumberOfTimes()
     val requests = List(
       Get("/something"),
       Delete(s"/phonebook/$id"),
