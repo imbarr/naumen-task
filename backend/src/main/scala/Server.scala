@@ -128,9 +128,11 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
       val start = startString.toInt
       val end = endString.toInt
       val range = book.getRange(start, end)
-      val header = `Content-Range`(RangeUnits.Other("entries"), ContentRange(start, end))
-      respondWithHeader(header) {
-        complete(range)
+      onSuccess(book.getSize) { total =>
+        val header = `Content-Range`(RangeUnits.Other("entries"), ContentRange(start, Math.min(end, total - 1), total))
+        respondWithHeader(header) {
+          complete(range)
+        }
       }
     }
   }
