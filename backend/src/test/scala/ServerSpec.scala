@@ -30,7 +30,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       BookEntryWithId(11, "Boris", "3354354")
     )
     book.get _ expects(None, None, None) returning Future.successful(entries)
-    Get("/phonebook") ~> server.routes ~> check {
+    Get("/phonebook") ~> server.route ~> check {
       assert(status == StatusCodes.OK)
       val result = responseAs[List[BookEntryWithId]]
       assert(result == entries)
@@ -46,9 +46,9 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       BookEntryWithId(11, "Boris", "3354354")
     )
     book.getSize _ expects() returning Future.successful(total)
-    book.get _ expects (None, None, Some((start, end))) returning Future.successful(entries)
+    book.get _ expects(None, None, Some((start, end))) returning Future.successful(entries)
     val uri = Uri("/phonebook").withQuery(Query("start" -> start.toString, "end" -> end.toString))
-    Get(uri) ~> server.routes ~> check {
+    Get(uri) ~> server.route ~> check {
       assert(status == StatusCodes.OK)
       val result = responseAs[List[BookEntryWithId]]
       assert(result == entries)
@@ -61,7 +61,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
     val entry = BookEntry("Bob", "dgfdgfdf")
     val id = 122
     book.add _ expects entry returning Future.successful(id)
-    Post("/phonebook", entry) ~> server.routes ~> check {
+    Post("/phonebook", entry) ~> server.route ~> check {
       assert(status == StatusCodes.Created)
       assert(header("Location").contains(Location(s"/phonebook/$id")))
     }
@@ -73,10 +73,10 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       BookEntryWithId(11, "John Doe", "456456"),
       BookEntryWithId(22, "Jane Doe", "232323")
     )
-    book.get _ expects (Some(substring), None, None) returning Future.successful(foundEntries)
+    book.get _ expects(Some(substring), None, None) returning Future.successful(foundEntries)
 
     val uri = Uri("/phonebook").withQuery(Query("nameSubstring" -> substring))
-    Get(uri) ~> server.routes ~> check {
+    Get(uri) ~> server.route ~> check {
       assert(status == StatusCodes.OK)
       val result = responseAs[List[BookEntryWithId]]
       assert(result == foundEntries)
@@ -89,10 +89,10 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       BookEntryWithId(11, "John Doe", "+7456456"),
       BookEntryWithId(22, "Jane Doe", "+7232323")
     )
-    book.get _ expects (None, Some(substring), None) returning Future.successful(foundEntries)
+    book.get _ expects(None, Some(substring), None) returning Future.successful(foundEntries)
 
     val uri = Uri("/phonebook").withQuery(Query("phoneSubstring" -> substring))
-    Get(uri) ~> server.routes ~> check {
+    Get(uri) ~> server.route ~> check {
       assert(status == StatusCodes.OK)
       val result = responseAs[List[BookEntryWithId]]
       assert(result == foundEntries)
@@ -120,7 +120,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
   it should "delete entry" in {
     val id = 11
     book.remove _ expects id returning Future.successful(true)
-    Delete(s"/phonebook/$id") ~> server.routes ~> check {
+    Delete(s"/phonebook/$id") ~> server.route ~> check {
       assert(status == StatusCodes.OK)
     }
   }
@@ -165,7 +165,8 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       Patch(s"/phonebook/22", "{\"some\": \"json\"}"),
       Get(Uri("/phonebook").withQuery(Query("start" -> "11", "end" -> "lul"))),
       Get(Uri("/phonebook").withQuery(Query("start" -> "32", "end" -> "22"))),
-      Get(Uri("/phonebook").withQuery(Query("start" -> "50", "end" -> "55")))
+      Get(Uri("/phonebook").withQuery(Query("start" -> "50", "end" -> "55"))),
+      Get(Uri("/phonebook").withQuery(Query("start" -> "50")))
     )
 
     testForAll(requests) {
@@ -175,7 +176,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
 
   private def testForAll(requests: List[HttpRequest])(assertion: => Assertion): Unit =
     for (request <- requests)
-      request ~> Route.seal(server.routes) ~> check {
+      request ~> Route.seal(server.route) ~> check {
         assertion
       }
 }

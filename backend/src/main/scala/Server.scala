@@ -23,12 +23,12 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
   val CORSHeaders = List(
     `Access-Control-Allow-Origin`.*,
     `Access-Control-Allow-Credentials`(true),
-    `Access-Control-Allow-Headers`("Authorization", "Content-Type", "X-Requested-With", "Content-Range"),
-    `Access-Control-Expose-Headers`("Content-Range")
+    `Access-Control-Allow-Headers`("Authorization", "Content-Type", "X-Requested-With", "X-Total-Count"),
+    `Access-Control-Expose-Headers`("X-Total-Count")
   )
 
   def start(config: ServerConfig): Future[ServerBinding] =
-    Http().bindAndHandle(route2HandlerFlow(routes), config.interface, config.port)
+    Http().bindAndHandle(route2HandlerFlow(route), config.interface, config.port)
 
   implicit def exceptionHandler: ExceptionHandler = ExceptionHandler {
     case error =>
@@ -36,7 +36,7 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
       complete(StatusCodes.InternalServerError)
   }
 
-  def routes: Route =
+  def route: Route =
     respondWithHeaders(CORSHeaders) {
       options {
         respondWithHeader(`Access-Control-Allow-Methods`(HttpMethods.OPTIONS, HttpMethods.GET)) {
@@ -44,21 +44,24 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
         }
       } ~
         Route.seal {
-          pathPrefix("phonebook") {
-            pathEndOrSingleSlash {
-              phonebookRoute
-            } ~
-              path(IntNumber) {
-                phonebookEntryRoute
-              }
-          } ~
-            path("ffoknit") {
-              complete(StatusCodes.ImATeapot)
-            }
+          root
         }
     }
 
-  def phonebookRoute: Route =
+  private def root: Route =
+    pathPrefix("phonebook") {
+      pathEndOrSingleSlash {
+        phonebook
+      } ~
+        path(IntNumber) {
+          phonebookEntry
+        }
+    } ~
+      path("ffoknit") {
+        complete(StatusCodes.ImATeapot)
+      }
+
+  private def phonebook: Route =
     post {
       createEntry
     } ~
@@ -66,7 +69,7 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
         getEntries
       }
 
-  def phonebookEntryRoute(id: Int): Route =
+  private def phonebookEntry(id: Int): Route =
     patch {
       modifyEntry(id)
     } ~
@@ -76,7 +79,7 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
         }
       }
 
-  val createEntry: Route =
+  private def createEntry: Route =
     entity(as[BookEntry]) { entry =>
       val futureId = book.add(entry)
       val futureHeaders = futureId.map(id => List(Location(s"/phonebook/$id")))
@@ -84,31 +87,20 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
       complete(futureResponse)
     }
 
-  val getEntries: Route =
-    parameters('nameSubstring.?, 'phoneSubstring.?, 'start.as[Int].?, 'end.as[Int].?) { (nameSubstring, phoneSubstring, startOption, endOption) =>
-      (startOption, endOption) match {
-        case (None, _) | (_, None) =>
-          complete(book.get(nameSubstring, phoneSubstring))
-        case (Some(start), Some(end)) =>
-          if (start > end) {
-            reject(MalformedQueryParamRejection("end", "start cannot be greater then end"))
-          }
-          else {
-            onSuccess(book.getSize) { total =>
-              if (start >= total) {
-                reject(MalformedQueryParamRejection("start", "start cannot be greater then total number of entries"))
-              }
-              else {
-                respondWithHeader(RawHeader("X-Total-Count", total.toString)) {
-                  complete(book.get(nameSubstring, phoneSubstring, Some((start, end))))
-                }
-              }
-            }
-          }
-      }
+  private def getEntries: Route =
+    parameters('nameSubstring.?, 'phoneSubstring.?, 'start.as[Int].?, 'end.as[Int].?) {
+      (nameSubstring, phoneSubstring, startOption, endOption) =>
+        (startOption, endOption) match {
+          case (None, None) =>
+            complete(book.get(nameSubstring, phoneSubstring))
+          case (None, _) | (_, None) =>
+            reject(MalformedQueryParamRejection("start", "start and end parameters should be used together"))
+          case (Some(start), Some(end)) =>
+            getEntriesInRange(nameSubstring, phoneSubstring, start, end)
+        }
     }
 
-  def modifyEntry(id: Int): Route =
+  private def modifyEntry(id: Int): Route =
     entity(as[BookEntry]) { entry =>
       predicate {
         book.replace(id, entry.name, entry.phoneNumber)
@@ -125,7 +117,25 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
         }
       }
 
-  def predicate(predicate: Future[Boolean]): Route =
+  private def getEntriesInRange(nameSubstring: Option[String], phoneSubstring: Option[String], start: Int, end: Int): Route = {
+    if (start > end) {
+      reject(MalformedQueryParamRejection("end", "start cannot be greater then end"))
+    }
+    else {
+      onSuccess(book.getSize) { total =>
+        if (start >= total) {
+          reject(MalformedQueryParamRejection("start", "start cannot be greater then total number of entries"))
+        }
+        else {
+          respondWithHeader(RawHeader("X-Total-Count", total.toString)) {
+            complete(book.get(nameSubstring, phoneSubstring, Some((start, end))))
+          }
+        }
+      }
+    }
+  }
+
+  private def predicate(predicate: Future[Boolean]): Route =
     Route.seal {
       onSuccess(predicate) { success =>
         if (success)
