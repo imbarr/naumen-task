@@ -1,8 +1,8 @@
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
-import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.model._
+import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.RouteResult.route2HandlerFlow
 import akka.http.scaladsl.server.{ExceptionHandler, MalformedQueryParamRejection, Route}
@@ -21,6 +21,13 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
   implicit val materializer = ActorMaterializer()
   implicit val executionContext = materializer.executionContext
 
+  val CORSHeaders = List(
+    `Access-Control-Allow-Origin`.*,
+    `Access-Control-Allow-Credentials`(true),
+    `Access-Control-Allow-Headers`("Authorization", "Content-Type", "X-Requested-With", "Content-Range"),
+    `Access-Control-Expose-Headers`("Content-Range")
+  )
+
   def start(config: ServerConfig): Future[ServerBinding] =
     Http().bindAndHandle(route2HandlerFlow(routes), config.interface, config.port)
 
@@ -31,17 +38,24 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
   }
 
   def routes: Route =
-    pathPrefix("phonebook") {
-      pathEndOrSingleSlash {
-        phonebookRoute
-      } ~
-        path(IntNumber) {
-          phonebookEntryRoute
+    respondWithHeaders(CORSHeaders) {
+      options {
+        respondWithHeader(`Access-Control-Allow-Methods`(HttpMethods.OPTIONS, HttpMethods.GET)) {
+          complete()
         }
-    } ~
-      path("ffoknit") {
-        complete(StatusCodes.ImATeapot)
-      }
+      } ~
+        pathPrefix("phonebook") {
+          pathEndOrSingleSlash {
+            phonebookRoute
+          } ~
+            path(IntNumber) {
+              phonebookEntryRoute
+            }
+        } ~
+        path("ffoknit") {
+          complete(StatusCodes.ImATeapot)
+        }
+    }
 
   def phonebookRoute: Route =
     post {
@@ -104,10 +118,10 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
     if (Try(startString.toInt).isFailure) {
       reject(MalformedQueryParamRejection("start", "start should be integer"))
     }
-    else if(Try(endString.toInt).isFailure) {
+    else if (Try(endString.toInt).isFailure) {
       reject(MalformedQueryParamRejection("end", "end should be integer"))
     }
-    else if(endString.toInt < startString.toInt) {
+    else if (endString.toInt < startString.toInt) {
       reject(MalformedQueryParamRejection("end", "end should not be less then start"))
     }
     else {
