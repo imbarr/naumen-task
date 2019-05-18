@@ -22,29 +22,29 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
 
   def anyBook(): Unit = {
     it should "add all entries" in {
-      val all = await(book.getAll).toSet
+      val all = await(book.get()).toSet
       assert(added.toSet subsetOf all)
     }
 
     it should "get range of entries" in {
-      val all = await(book.getAll).toSet
-      val single = await(book.getRange(0, 0))
+      val all = await(book.get()).toSet
+      val single = await(book.get(range = Some((0, 0))))
       assert(single.size == 1)
-      val entireRange = await(book.getRange(0, all.size - 1))
+      val entireRange = await(book.get(range = Some((0, all.size - 1))))
       assert(entireRange.toSet == all)
-      val overflow = await(book.getRange(0, all.size + 22))
+      val overflow = await(book.get(range = Some((0, all.size + 22))))
       assert(overflow.toSet == all)
       val middle = all.size / 2
-      val firstHalf = await(book.getRange(0, middle)).toSet
-      val secondHalf = await(book.getRange(middle + 1, all.size - 1)).toSet
+      val firstHalf = await(book.get(range = Some((0, middle)))).toSet
+      val secondHalf = await(book.get(range = Some((middle + 1, all.size - 1)))).toSet
       assert((firstHalf intersect secondHalf) == Set.empty)
       assert((firstHalf union secondHalf) == all)
     }
 
     it should "get number of entries" in {
-      val oldSize = await(book.getAll).size
+      val oldSize = await(book.get()).size
       added = added ++ addEntries(entries)
-      val newSize = await(book.getAll).size
+      val newSize = await(book.get()).size
       assert(newSize - oldSize == entries.size)
     }
 
@@ -52,7 +52,7 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
       val ranges = List((-2, 3), (10, 9), (-2, -3))
       for(range <- ranges) {
         assertThrows[IllegalArgumentException]{
-          await(book.getRange _ tupled range)
+          await(book.get(range = Some(range)))
         }
       }
     }
@@ -95,28 +95,28 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
 
     it should "find elements by name substring" in {
       for (substring <- List("a", "Jane", "Doe")) {
-        val expected = await(book.getAll).filter(_.name.contains(substring))
-        val actual = await(book.findByNameSubstring(substring))
+        val expected = await(book.get()).filter(_.name.contains(substring))
+        val actual = await(book.get(nameSubstring = Some(substring)))
         assert(expected.toSet == actual.toSet)
       }
     }
 
     it should "find elements by telephone substring" in {
       for (substring <- List("800", "+7", "000000")) {
-        val expected = await(book.getAll).filter(_.phoneNumber.contains(substring))
-        val actual = await(book.findByPhoneNumberSubstring(substring))
+        val expected = await(book.get()).filter(_.phoneNumber.contains(substring))
+        val actual = await(book.get(phoneSubstring = Some(substring)))
         assert(expected.toSet == actual.toSet)
       }
     }
 
     it should "not change state if entry does not exist" in {
-      val old = await(book.getAll)
+      val old = await(book.get())
       val id = old.map(_.id).max + 1
       assert(!await(book.changePhoneNumber(id, "")))
       assert(!await(book.changeName(id, "")))
       assert(!await(book.replace(id, "", "")))
       assert(!await(book.remove(id)))
-      assert(old.toSet == await(book.getAll).toSet)
+      assert(old.toSet == await(book.get()).toSet)
     }
   }
 
@@ -124,7 +124,7 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
     val oldEntries = added.toSet
     val entry = oldEntries.head
     val changedEntries = operation(entry)
-    val newEntries = await(book.getAll).toSet
+    val newEntries = await(book.get()).toSet
     assert(changedEntries subsetOf (newEntries diff oldEntries))
     assert((oldEntries diff newEntries) == Set(entry))
   }

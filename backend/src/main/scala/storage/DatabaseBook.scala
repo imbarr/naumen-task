@@ -17,17 +17,29 @@ class DatabaseBook(database: Database)(implicit context: ExecutionContext) exten
     database.run(add.andThen(identity).withPinnedSession)
   }
 
-  override def getAll: Future[Seq[BookEntryWithId]] =
-    database.run(phones.result).map(toEntries)
+  override def get(nameSubstring: Option[String],
+                   phoneSubstring: Option[String],
+                   range: Option[(Int, Int)]): Future[Seq[BookEntryWithId]] = {
+    val nameFiltered = nameSubstring match {
+      case Some(substring) => phones.filter(p => charindex(substring, p.name) > 0)
+      case None => phones
+    }
+    val phoneFiltered = phoneSubstring match {
+      case Some(substring) => nameFiltered.filter(p => charindex(substring, p.phone) > 0)
+      case None => nameFiltered
+    }
+    val cropped = range match {
+      case Some((start, end)) =>
+        require(start >= 0 && end >= 0 && start <= end)
+        phoneFiltered.drop(start).take(end - start + 1)
+      case None =>
+        phoneFiltered
+    }
+    database.run(cropped.result).map(toEntries)
+  }
 
   override def getSize: Future[Int] =
     database.run(phones.length.result)
-
-  override def getRange(start: Int, end: Int): Future[Seq[BookEntryWithId]] = {
-    require(start >= 0 && end >= 0 && start <= end)
-    val query = phones.drop(start).take(end - start + 1).result
-    database.run(query).map(toEntries)
-  }
 
   override def changePhoneNumber(id: Int, phoneNumber: String): Future[Boolean] = {
     val query = phones.filter(_.id === id).map(_.phone).update(phoneNumber)
@@ -47,16 +59,6 @@ class DatabaseBook(database: Database)(implicit context: ExecutionContext) exten
   override def remove(id: Int): Future[Boolean] = {
     val query = phones.filter(_.id === id).delete
     database.run(query).map(_ == 1)
-  }
-
-  override def findByNameSubstring(substring: String): Future[Seq[BookEntryWithId]] = {
-    val query = phones.filter(p => charindex(substring, p.name) > 0).result
-    database.run(query).map(toEntries)
-  }
-
-  override def findByPhoneNumberSubstring(substring: String): Future[Seq[BookEntryWithId]] = {
-    val query = phones.filter(p => charindex(substring, p.phone) > 0).result
-    database.run(query).map(toEntries)
   }
 
   private def toEntries(tuples: Seq[(Int, String, String)]): Seq[BookEntryWithId] =

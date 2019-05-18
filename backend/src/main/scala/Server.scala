@@ -1,3 +1,4 @@
+import _root_.util.CirceMarshalling._
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
@@ -5,17 +6,15 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.RouteResult.route2HandlerFlow
-import akka.http.scaladsl.server.{ExceptionHandler, MalformedQueryParamRejection, Route}
+import akka.http.scaladsl.server._
 import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.Logger
 import config.ServerConfig
 import data.Implicits._
 import data._
 import storage.Book
-import util.CirceMarshalling._
 
 import scala.concurrent.Future
-import scala.util.Try
 
 class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
   implicit val materializer = ActorMaterializer()
@@ -44,16 +43,18 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
           complete()
         }
       } ~
-        pathPrefix("phonebook") {
-          pathEndOrSingleSlash {
-            phonebookRoute
+        Route.seal {
+          pathPrefix("phonebook") {
+            pathEndOrSingleSlash {
+              phonebookRoute
+            } ~
+              path(IntNumber) {
+                phonebookEntryRoute
+              }
           } ~
-            path(IntNumber) {
-              phonebookEntryRoute
+            path("ffoknit") {
+              complete(StatusCodes.ImATeapot)
             }
-        } ~
-        path("ffoknit") {
-          complete(StatusCodes.ImATeapot)
         }
     }
 
@@ -78,24 +79,33 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
   val createEntry: Route =
     entity(as[BookEntry]) { entry =>
       val futureId = book.add(entry)
-      val futureHeaders = futureId.map(id => List(Location("/phonebook/" + id)))
+      val futureHeaders = futureId.map(id => List(Location(s"/phonebook/$id")))
       val futureResponse = futureHeaders.map(headers => HttpResponse(StatusCodes.Created, headers))
       complete(futureResponse)
     }
 
   val getEntries: Route =
-    parameters('nameSubstring) { substring =>
-      complete(book.findByNameSubstring(substring))
-    } ~
-      parameters('phoneSubstring) { substring =>
-        complete(book.findByPhoneNumberSubstring(substring))
-      } ~
-      parameters('start, 'end) { (start, end) =>
-        Route.seal {
-          getRangeRoute(start, end)
-        }
-      } ~
-      complete(book.getAll)
+    parameters('nameSubstring.?, 'phoneSubstring.?, 'start.as[Int].?, 'end.as[Int].?) { (nameSubstring, phoneSubstring, startOption, endOption) =>
+      (startOption, endOption) match {
+        case (None, _) | (_, None) =>
+          complete(book.get(nameSubstring, phoneSubstring))
+        case (Some(start), Some(end)) =>
+          if (start > end)
+            reject(MalformedQueryParamRejection("end", "start cannot be greater then end"))
+          else
+            onSuccess(book.getSize) { total =>
+              if (start >= total)
+                reject(MalformedQueryParamRejection("start", "start cannot be greater then total number of entries"))
+              else {
+                val actualEnd = Math.min(end, total)
+                val header = `Content-Range`(RangeUnits.Other("entries"), ContentRange(start, actualEnd, total))
+                respondWithHeader(header) {
+                  complete(book.get(nameSubstring, phoneSubstring, Some((start, end))))
+                }
+              }
+            }
+      }
+    }
 
   def modifyEntry(id: Int): Route =
     entity(as[BookEntry]) { entry =>
@@ -113,29 +123,6 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
           book.changePhoneNumber(id, wrapper.phoneNumber)
         }
       }
-
-  def getRangeRoute(startString: String, endString: String): Route = {
-    if (Try(startString.toInt).isFailure) {
-      reject(MalformedQueryParamRejection("start", "start should be integer"))
-    }
-    else if (Try(endString.toInt).isFailure) {
-      reject(MalformedQueryParamRejection("end", "end should be integer"))
-    }
-    else if (endString.toInt < startString.toInt) {
-      reject(MalformedQueryParamRejection("end", "end should not be less then start"))
-    }
-    else {
-      val start = startString.toInt
-      val end = endString.toInt
-      val range = book.getRange(start, end)
-      onSuccess(book.getSize) { total =>
-        val header = `Content-Range`(RangeUnits.Other("entries"), ContentRange(start, Math.min(end, total - 1), total))
-        respondWithHeader(header) {
-          complete(range)
-        }
-      }
-    }
-  }
 
   def predicate(predicate: Future[Boolean]): Route =
     Route.seal {

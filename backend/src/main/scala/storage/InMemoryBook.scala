@@ -14,19 +14,30 @@ class InMemoryBook extends Book {
     Future.successful(lastId)
   }
 
-  override def getAll: Future[List[BookEntryWithId]] = {
-    val result = map.map(join).toList
+  override def get(nameSubstring: Option[String],
+                   phoneSubstring: Option[String],
+                   range: Option[(Int, Int)]): Future[Seq[BookEntryWithId]] = {
+    val nameFiltered = nameSubstring match {
+      case Some(substring) => map.filter(_._2.name.contains(substring))
+      case None => map
+    }
+    val phoneFiltered = phoneSubstring match {
+      case Some(substring) => nameFiltered.filter(_._2.phoneNumber.contains(substring))
+      case None => nameFiltered
+    }
+    val cropped = range match {
+      case Some((start, end)) =>
+        require(start >= 0 && end >= 0 && start <= end)
+        phoneFiltered.slice(start, end + 1)
+      case None =>
+        phoneFiltered
+    }
+    val result = cropped.map(join).toList
     Future.successful(result)
   }
 
   override def getSize: Future[Int] =
     Future.successful(map.size)
-
-  override def getRange(start: Int, end: Int): Future[List[BookEntryWithId]] = {
-    require(start >= 0 && end >= 0 && start <= end)
-    val result = map.slice(start, end + 1).map(join).toList
-    Future.successful(result)
-  }
 
   override def changePhoneNumber(id: Int, phoneNumber: String): Future[Boolean] =
     change(id, entry => BookEntry(entry.name, phoneNumber))
@@ -45,18 +56,6 @@ class InMemoryBook extends Book {
         map -= id
         Future.successful(true)
     }
-
-  override def findByNameSubstring(substring: String): Future[List[BookEntryWithId]] = {
-    val filtered = map.filter(_._2.name.contains(substring))
-    val result = filtered.map(join).toList
-    Future.successful(result)
-  }
-
-  override def findByPhoneNumberSubstring(substring: String): Future[List[BookEntryWithId]] = {
-    val filtered = map.filter(_._2.phoneNumber.contains(substring))
-    val result = filtered.map(join).toList
-    Future.successful(result)
-  }
 
   private def change(id: Int, modification: BookEntry => BookEntry): Future[Boolean] =
     map.get(id) match {

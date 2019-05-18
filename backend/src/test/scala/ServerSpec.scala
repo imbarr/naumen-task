@@ -29,7 +29,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       BookEntryWithId(22, "John", "343453"),
       BookEntryWithId(11, "Boris", "3354354")
     )
-    book.getAll _ expects() returning Future.successful(entries)
+    book.get _ expects(None, None, None) returning Future.successful(entries)
     Get("/phonebook") ~> server.routes ~> check {
       assert(status == StatusCodes.OK)
       val result = responseAs[List[BookEntryWithId]]
@@ -40,17 +40,19 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
   it should "return range of entries" in {
     val start = 11
     val end = 12
+    val total = 100
     val entries = List(
       BookEntryWithId(22, "John", "343453"),
       BookEntryWithId(11, "Boris", "3354354")
     )
-    book.getRange _ expects (start, end) returning Future.successful(entries)
+    book.getSize _ expects() returning Future.successful(total)
+    book.get _ expects (None, None, Some((start, end))) returning Future.successful(entries)
     val uri = Uri("/phonebook").withQuery(Query("start" -> start.toString, "end" -> end.toString))
     Get(uri) ~> server.routes ~> check {
       assert(status == StatusCodes.OK)
       val result = responseAs[List[BookEntryWithId]]
       assert(result == entries)
-      val expectedHeader = `Content-Range`(RangeUnits.Other("entries"), ContentRange(start, end))
+      val expectedHeader = `Content-Range`(RangeUnits.Other("entries"), ContentRange(start, end, total))
       assert(header("Content-Range").contains(expectedHeader))
     }
   }
@@ -71,7 +73,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       BookEntryWithId(11, "John Doe", "456456"),
       BookEntryWithId(22, "Jane Doe", "232323")
     )
-    book.findByNameSubstring _ expects substring returning Future.successful(foundEntries)
+    book.get _ expects (Some(substring), None, None) returning Future.successful(foundEntries)
 
     val uri = Uri("/phonebook").withQuery(Query("nameSubstring" -> substring))
     Get(uri) ~> server.routes ~> check {
@@ -87,7 +89,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       BookEntryWithId(11, "John Doe", "+7456456"),
       BookEntryWithId(22, "Jane Doe", "+7232323")
     )
-    book.findByPhoneNumberSubstring _ expects substring returning Future.successful(foundEntries)
+    book.get _ expects (None, Some(substring), None) returning Future.successful(foundEntries)
 
     val uri = Uri("/phonebook").withQuery(Query("phoneSubstring" -> substring))
     Get(uri) ~> server.routes ~> check {
@@ -155,14 +157,15 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
   }
 
   it should "return 400 for incorrect requests" in {
-    val id = 22
+    book.getSize _ expects() returning Future.successful(50)
     val requests = List(
       Post("/phonebook", HttpEntity(ContentTypes.`application/json`, "")),
       Post("/phonebook", NameWrapper("name")),
-      Patch(s"/phonebook/$id", HttpEntity(ContentTypes.`application/json`, "{\"malformed\": json}")),
-      Patch(s"/phonebook/$id", "{\"some\": \"json\"}"),
+      Patch(s"/phonebook/22", HttpEntity(ContentTypes.`application/json`, "{\"malformed\": json}")),
+      Patch(s"/phonebook/22", "{\"some\": \"json\"}"),
       Get(Uri("/phonebook").withQuery(Query("start" -> "11", "end" -> "lul"))),
-      Get(Uri("/phonebook").withQuery(Query("start" -> "32", "end" -> "22")))
+      Get(Uri("/phonebook").withQuery(Query("start" -> "32", "end" -> "22"))),
+      Get(Uri("/phonebook").withQuery(Query("start" -> "50", "end" -> "55")))
     )
 
     testForAll(requests) {
