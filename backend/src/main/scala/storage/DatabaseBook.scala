@@ -20,6 +20,9 @@ class DatabaseBook(database: Database)(implicit context: ExecutionContext) exten
   override def getAll: Future[Seq[BookEntryWithId]] =
     database.run(phones.result).map(toEntries)
 
+  override def getSize: Future[Int] =
+    database.run(phones.length.result)
+
   override def getRange(start: Int, end: Int): Future[Seq[BookEntryWithId]] = {
     require(start >= 0 && end >= 0 && start <= end)
     val query = phones.drop(start).take(end - start + 1).result

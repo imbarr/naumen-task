@@ -41,6 +41,13 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
       assert((firstHalf union secondHalf) == all)
     }
 
+    it should "get number of entries" in {
+      val oldSize = await(book.getAll).size
+      added = added ++ addEntries(entries)
+      val newSize = await(book.getAll).size
+      assert(newSize - oldSize == entries.size)
+    }
+
     it should "throw exception on invalid range parameters" in {
       val ranges = List((-2, 3), (10, 9), (-2, -3))
       for(range <- ranges) {
