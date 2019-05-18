@@ -121,7 +121,6 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
   }
 
   def changeEntriesTest(operation: BookEntryWithId => Set[BookEntryWithId]): Assertion = {
-    val added = addEntries(entries)
     val oldEntries = added.toSet
     val entry = oldEntries.head
     val changedEntries = operation(entry)
