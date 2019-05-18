@@ -90,20 +90,21 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
         case (None, _) | (_, None) =>
           complete(book.get(nameSubstring, phoneSubstring))
         case (Some(start), Some(end)) =>
-          if (start > end)
+          if (start > end) {
             reject(MalformedQueryParamRejection("end", "start cannot be greater then end"))
-          else
+          }
+          else {
             onSuccess(book.getSize) { total =>
-              if (start >= total)
+              if (start >= total) {
                 reject(MalformedQueryParamRejection("start", "start cannot be greater then total number of entries"))
+              }
               else {
-                val actualEnd = Math.min(end, total)
-                val header = `Content-Range`(RangeUnits.Other("entries"), ContentRange(start, actualEnd, total))
-                respondWithHeader(header) {
+                respondWithHeader(RawHeader("X-Total-Count", total.toString)) {
                   complete(book.get(nameSubstring, phoneSubstring, Some((start, end))))
                 }
               }
             }
+          }
       }
     }
 

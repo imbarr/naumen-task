@@ -52,8 +52,8 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       assert(status == StatusCodes.OK)
       val result = responseAs[List[BookEntryWithId]]
       assert(result == entries)
-      val expectedHeader = `Content-Range`(RangeUnits.Other("entries"), ContentRange(start, end, total))
-      assert(header("Content-Range").contains(expectedHeader))
+      val expectedHeader = RawHeader("X-Total-Count", total.toString)
+      assert(header("X-Total-Count").contains(expectedHeader))
     }
   }
 
