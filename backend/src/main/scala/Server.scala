@@ -39,7 +39,7 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
   def route: Route =
     respondWithHeaders(CORSHeaders) {
       options {
-        respondWithHeader(`Access-Control-Allow-Methods`(HttpMethods.OPTIONS, HttpMethods.GET, HttpMethods.POST, HttpMethods.PATCH)) {
+        respondWithHeader(`Access-Control-Allow-Methods`(HttpMethods.OPTIONS, HttpMethods.GET, HttpMethods.POST, HttpMethods.PATCH, HttpMethods.DELETE)) {
           complete(StatusCodes.OK)
         }
       } ~
