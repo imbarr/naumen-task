@@ -35,6 +35,9 @@ class InMemoryBook extends Book {
     Future.successful(result)
   }
 
+  override def getById(id: Int): Future[Option[BookEntry]] =
+    Future.successful(map.get(id))
+
   override def changePhoneNumber(id: Int, phoneNumber: String): Future[Boolean] =
     change(id, entry => BookEntry(entry.name, phoneNumber))
 

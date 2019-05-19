@@ -57,6 +57,17 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
     }
   }
 
+  it should "return entry by id" in {
+    val id = 22
+    val entry = BookEntry("Boris", "33434344")
+    book.getById _ expects id returning Future.successful(Some(entry))
+    Get(s"/phonebook/$id") ~> server.route ~> check {
+      assert(status == StatusCodes.OK)
+      val result = responseAs[BookEntry]
+      assert(result == entry)
+    }
+  }
+
   it should "create new phonebook entry" in {
     val entry = BookEntry("Bob", "dgfdgfdf")
     val id = 122
@@ -131,8 +142,10 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
     val phone = "345353"
     book.remove _ expects id returning Future.successful(false) anyNumberOfTimes()
     book.replace _ expects(id, name, phone) returning Future.successful(false) anyNumberOfTimes()
+    book.getById _ expects id returning Future.successful(None) anyNumberOfTimes()
     val requests = List(
       Get("/something"),
+      Get(s"/phonebook/$id"),
       Delete(s"/phonebook/$id"),
       Patch(s"/phonebook/$id", BookEntry(name, phone))
     )
@@ -147,7 +160,6 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
     val requests = List(
       Delete("/phonebook"),
       Patch("/phonebook"),
-      Get(s"/phonebook/$id"),
       Put(s"/phonebook/$id")
     )
 
@@ -157,7 +169,6 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
   }
 
   it should "return 400 for incorrect requests" in {
-    book.getSize _ expects(*, *) returning Future.successful(50)
     val requests = List(
       Post("/phonebook", HttpEntity(ContentTypes.`application/json`, "")),
       Post("/phonebook", NameWrapper("name")),
@@ -165,7 +176,6 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       Patch(s"/phonebook/22", "{\"some\": \"json\"}"),
       Get(Uri("/phonebook").withQuery(Query("start" -> "11", "end" -> "lul"))),
       Get(Uri("/phonebook").withQuery(Query("start" -> "32", "end" -> "22"))),
-      Get(Uri("/phonebook").withQuery(Query("start" -> "50", "end" -> "55"))),
       Get(Uri("/phonebook").withQuery(Query("start" -> "50")))
     )
 

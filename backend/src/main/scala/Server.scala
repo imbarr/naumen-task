@@ -24,7 +24,7 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
     `Access-Control-Allow-Origin`.*,
     `Access-Control-Allow-Credentials`(true),
     `Access-Control-Allow-Headers`("Authorization", "Content-Type", "X-Requested-With", "X-Total-Count"),
-    `Access-Control-Expose-Headers`("X-Total-Count")
+    `Access-Control-Expose-Headers`("X-Total-Count", "Location")
   )
 
   def start(config: ServerConfig): Future[ServerBinding] =
@@ -39,8 +39,8 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
   def route: Route =
     respondWithHeaders(CORSHeaders) {
       options {
-        respondWithHeader(`Access-Control-Allow-Methods`(HttpMethods.OPTIONS, HttpMethods.GET)) {
-          complete()
+        respondWithHeader(`Access-Control-Allow-Methods`(HttpMethods.OPTIONS, HttpMethods.GET, HttpMethods.POST, HttpMethods.PATCH)) {
+          complete(StatusCodes.OK)
         }
       } ~
         Route.seal {
@@ -70,9 +70,12 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
       }
 
   private def phonebookEntry(id: Int): Route =
-    patch {
-      modifyEntry(id)
+    get {
+      getEntry(id)
     } ~
+      patch {
+        modifyEntry(id)
+      } ~
       delete {
         predicate {
           book.remove(id)
@@ -100,6 +103,12 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
         }
     }
 
+  private def getEntry(id: Int): Route =
+    onSuccess(book.getById(id)) {
+      case None => reject()
+      case Some(entry) => complete(entry)
+    }
+
   private def modifyEntry(id: Int): Route =
     entity(as[BookEntry]) { entry =>
       predicate {
@@ -123,13 +132,8 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
     }
     else {
       onSuccess(book.getSize(nameSubstring, phoneSubstring)) { total =>
-        if (start >= total) {
-          reject(MalformedQueryParamRejection("start", "start cannot be greater then total number of entries"))
-        }
-        else {
-          respondWithHeader(RawHeader("X-Total-Count", total.toString)) {
-            complete(book.get(nameSubstring, phoneSubstring, Some((start, end))))
-          }
+        respondWithHeader(RawHeader("X-Total-Count", total.toString)) {
+          complete(book.get(nameSubstring, phoneSubstring, Some((start, end))))
         }
       }
     }

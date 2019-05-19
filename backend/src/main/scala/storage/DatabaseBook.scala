@@ -37,6 +37,15 @@ class DatabaseBook(database: Database)(implicit context: ExecutionContext) exten
     database.run(query.result)
   }
 
+  override def getById(id: Int): Future[Option[BookEntry]] = {
+    val query = phones
+      .filter(_.id === id)
+      .map(t => (t.name, t.phone))
+      .result
+      .headOption
+    database.run(query).map(_.map(BookEntry.tupled))
+  }
+
   override def changePhoneNumber(id: Int, phoneNumber: String): Future[Boolean] = {
     val query = phones.filter(_.id === id).map(_.phone).update(phoneNumber)
     database.run(query).map(_ == 1)
