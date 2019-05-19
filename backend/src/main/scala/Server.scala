@@ -21,10 +21,15 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
   implicit val executionContext = materializer.executionContext
 
   val CORSHeaders = List(
+    // Wildcard as allowed origin is vulnerable to cross-site request forgery.
+    // It is left like this for easier application setup.
     `Access-Control-Allow-Origin`.*,
-    `Access-Control-Allow-Credentials`(true),
-    `Access-Control-Allow-Headers`("Authorization", "Content-Type", "X-Requested-With", "X-Total-Count"),
+    `Access-Control-Allow-Headers`("Content-Type"),
     `Access-Control-Expose-Headers`("X-Total-Count", "Location")
+  )
+
+  val allowedMethods = `Access-Control-Allow-Methods`(
+    HttpMethods.OPTIONS, HttpMethods.GET, HttpMethods.POST, HttpMethods.PATCH, HttpMethods.DELETE
   )
 
   def start(config: ServerConfig): Future[ServerBinding] =
@@ -39,7 +44,7 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
   def route: Route =
     respondWithHeaders(CORSHeaders) {
       options {
-        respondWithHeader(`Access-Control-Allow-Methods`(HttpMethods.OPTIONS, HttpMethods.GET, HttpMethods.POST, HttpMethods.PATCH, HttpMethods.DELETE)) {
+        respondWithHeader(allowedMethods) {
           complete(StatusCodes.OK)
         }
       } ~
@@ -126,7 +131,10 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
         }
       }
 
-  private def getEntriesInRange(nameSubstring: Option[String], phoneSubstring: Option[String], start: Int, end: Int): Route = {
+  private def getEntriesInRange(nameSubstring: Option[String],
+                                phoneSubstring: Option[String],
+                                start: Int,
+                                end: Int): Route = {
     if (start > end) {
       reject(MalformedQueryParamRejection("end", "start cannot be greater then end"))
     }
