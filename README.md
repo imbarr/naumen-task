@@ -5,9 +5,11 @@
 * Java SDK 10
 * sbt 1.0
 * SQL Server 2017 (достаточно Express Edition)
+* npm
 
 ### Инструкции по запуску
-1) Настройте приложение в `/src/main/resources/application.conf`. Пример настроек смотрите в файле `example-application.conf`
+1) Настройте приложение в `backend/src/main/resources/application.conf`.
+   Пример настроек смотрите в файле <nobr>`example-application.conf`</nobr>
 2) Создайте базу данных для приложения, например, с помощью `sqlcmd`:
    ```
    sqlcmd
@@ -15,6 +17,17 @@
    2> go
    ```
 3) `sbt run`
+
+#### Веб-приложение
+1) Настройте приложение в файле `frontend/src/config.json`
+2) ```
+   npm install
+   npm run start
+   ```
+3) Дополнительно: заполните таблицу тестовыми данными:
+   ```
+   sqlcmd -d naumen -i database/fill.sql
+   ```
 
 ### Примеры использования
 
@@ -25,7 +38,7 @@ POST /phonebook
 
 {
   "name": "Alex",
-  "phoneNumber": "+78005553535"
+  "phone": "+78005553535"
 }
 ```
 
@@ -46,12 +59,12 @@ GET /phonebook
     {
         "id": 22,
         "name": "John",
-        "phoneNumber": "88005553535"
+        "phone": "88005553535"
     },
     {
         "id": 33,
         "name": "Jane",
-        "phoneNumber": "88005553535"
+        "phone": "88005553535"
     },
     ...
 ]
@@ -69,12 +82,12 @@ GET /phonebook?nameSubstring=Doe
     {
         "id": 22,
         "name": "John Doe",
-        "phoneNumber": "88005553535"
+        "phone": "88005553535"
     },
     {
         "id": 33,
         "name": "Jane Doe",
-        "phoneNumber": "88005553535"
+        "phone": "88005553535"
     },
     ...
 ]
@@ -92,12 +105,12 @@ GET /phonebook?phoneSubstring=%2B7922
     {
         "id": 22,
         "name": "John Doe",
-        "phoneNumber": "+79222222222"
+        "phone": "+79222222222"
     },
     {
         "id": 33,
         "name": "Jane Doe",
-        "phoneNumber": "+79222222292"
+        "phone": "+79222222292"
     },
     ...
 ]
@@ -116,7 +129,7 @@ PATCH /phonebook/22
 
 {
   "name": "John",
-  "phoneNumber": "88005553535"
+  "phone": "88005553535"
 }
 ```
 
@@ -132,6 +145,12 @@ PATCH /phonebook/22
 PATCH /phonebook/22
 
 {
-  "phoneNumber": "88005553535"
+  "phone": "88005553535"
 }
 ```
+
+### Используемые технологии
+* [Akka](https://akka.io/)
+* [Slick](http://slick.lightbend.com/)
+* [Circe](https://circe.github.io/circe/)
+* [React-Admin](https://marmelab.com/react-admin/)
