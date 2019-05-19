@@ -5,7 +5,7 @@ const PhoneCreate = props =>
     <Create {...props}>
         <SimpleForm redirect='/'>
             <TextInput source='name' validate={required}/>
-            <TextInput source='phoneNumber' validate={required}/>
+            <TextInput source='phone' validate={required}/>
         </SimpleForm>
     </Create>;
 

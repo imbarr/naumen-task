@@ -1,9 +1,9 @@
 import React from 'react';
 import {Admin, Resource} from 'react-admin';
 import dataProvider from './DataProvider';
-import PhoneList from './PhoneList';
-import PhoneCreate from "./PhoneCreate";
-import PhoneEdit from "./PhoneEdit";
+import PhoneList from './phones/PhoneList';
+import PhoneCreate from "./phones/PhoneCreate";
+import PhoneEdit from "./phones/PhoneEdit";
 
 const App = () =>
     <Admin dataProvider={dataProvider}>

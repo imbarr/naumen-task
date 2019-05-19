@@ -46,7 +46,7 @@ class MainSpec extends FlatSpec {
     val decodedEither = parse(content).flatMap(_.as[List[BookEntryWithId]])
     assert(decodedEither.isRight)
     val decoded = decodedEither.right.get
-    val withoutIds = decoded.map(entry => BookEntry(entry.name, entry.phoneNumber))
+    val withoutIds = decoded.map(entry => BookEntry(entry.name, entry.phone))
     assert(entries.subsetOf(withoutIds.toSet))
   }
 

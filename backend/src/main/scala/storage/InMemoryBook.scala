@@ -42,7 +42,7 @@ class InMemoryBook extends Book {
     change(id, entry => BookEntry(entry.name, phoneNumber))
 
   override def changeName(id: Int, name: String): Future[Boolean] =
-    change(id, entry => BookEntry(name, entry.phoneNumber))
+    change(id, entry => BookEntry(name, entry.phone))
 
   override def replace(id: Int, name: String, phoneNumber: String): Future[Boolean] =
     change(id, _ => BookEntry(name, phoneNumber))
@@ -63,7 +63,7 @@ class InMemoryBook extends Book {
       case None => map
     }
     phoneSubstring match {
-      case Some(substring) => nameFiltered.filter(_._2.phoneNumber.contains(substring))
+      case Some(substring) => nameFiltered.filter(_._2.phone.contains(substring))
       case None => nameFiltered
     }
   }
@@ -78,5 +78,5 @@ class InMemoryBook extends Book {
     }
 
   private def join(pair: (Int, BookEntry)): BookEntryWithId =
-    BookEntryWithId(pair._1, pair._2.name, pair._2.phoneNumber)
+    BookEntryWithId(pair._1, pair._2.name, pair._2.phone)
 }

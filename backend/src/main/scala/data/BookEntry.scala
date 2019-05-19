@@ -1,3 +1,3 @@
 package data
 
-case class BookEntry(name: String, phoneNumber: String)
+case class BookEntry(name: String, phone: String)

@@ -49,7 +49,7 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
 
     it should "get entry by id" in {
       val entry = await(book.get()).head
-      val expected = BookEntry(entry.name, entry.phoneNumber)
+      val expected = BookEntry(entry.name, entry.phone)
       val byId = await(book.getById(entry.id))
       assert(byId.contains(expected))
     }
@@ -69,7 +69,7 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
     }
 
     it should "change phone number" in changeEntriesTest { entry =>
-      val newPhoneNumber = entry.phoneNumber + "0"
+      val newPhoneNumber = entry.phone + "0"
       val changedEntry = BookEntryWithId(entry.id, entry.name, newPhoneNumber)
       val success = await(book.changePhoneNumber(entry.id, newPhoneNumber))
       assert(success)
@@ -78,7 +78,7 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
 
     it should "change name" in changeEntriesTest { entry =>
       val newName = entry.name + "0"
-      val changedEntry = BookEntryWithId(entry.id, newName, entry.phoneNumber)
+      val changedEntry = BookEntryWithId(entry.id, newName, entry.phone)
       val success = await(book.changeName(entry.id, newName))
       assert(success)
       Set(changedEntry)
@@ -86,7 +86,7 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
 
     it should "replace entry" in changeEntriesTest { entry =>
       val newName = entry.name + "0"
-      val newPhoneNumber = entry.phoneNumber + "0"
+      val newPhoneNumber = entry.phone + "0"
       val changedEntry = BookEntryWithId(entry.id, newName, newPhoneNumber)
       val success = await(book.replace(entry.id, newName, newPhoneNumber))
       assert(success)
@@ -109,7 +109,7 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
 
     it should "find elements by telephone substring" in {
       for (substring <- List("800", "+7", "000000")) {
-        val expected = await(book.get()).filter(_.phoneNumber.contains(substring))
+        val expected = await(book.get()).filter(_.phone.contains(substring))
         val actual = await(book.get(phoneSubstring = Some(substring)))
         assert(expected.toSet == actual.toSet)
       }
@@ -138,7 +138,7 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
   def addEntries(entries: List[BookEntry]): List[BookEntryWithId] =
     entries.map(entry => {
       val id = await(book.add(entry))
-      BookEntryWithId(id, entry.name, entry.phoneNumber)
+      BookEntryWithId(id, entry.name, entry.phone)
     })
 
   def await[T](future: Future[T]): T =

@@ -11,7 +11,7 @@ class DatabaseBook(database: Database)(implicit context: ExecutionContext) exten
   private val charindex = SimpleFunction.binary[String, String, Int]("charindex")
 
   override def add(entry: BookEntry): Future[Int] = {
-    val add = phones.map(p => (p.name, p.phone)) += (entry.name, entry.phoneNumber)
+    val add = phones.map(p => (p.name, p.phone)) += (entry.name, entry.phone)
     val getResult = GetResult(r => r.nextInt())
     val identity = sql"select @@IDENTITY".as[Int](getResult).head
     database.run(add.andThen(identity).withPinnedSession)

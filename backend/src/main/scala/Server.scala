@@ -117,7 +117,7 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
   private def modifyEntry(id: Int): Route =
     entity(as[BookEntry]) { entry =>
       predicate {
-        book.replace(id, entry.name, entry.phoneNumber)
+        book.replace(id, entry.name, entry.phone)
       }
     } ~
       entity(as[NameWrapper]) { wrapper =>
@@ -127,7 +127,7 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
       } ~
       entity(as[PhoneNumberWrapper]) { wrapper =>
         predicate {
-          book.changePhoneNumber(id, wrapper.phoneNumber)
+          book.changePhoneNumber(id, wrapper.phone)
         }
       }
 
