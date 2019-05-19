@@ -45,7 +45,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       BookEntryWithId(22, "John", "343453"),
       BookEntryWithId(11, "Boris", "3354354")
     )
-    book.getSize _ expects() returning Future.successful(total)
+    book.getSize _ expects(*, *) returning Future.successful(total)
     book.get _ expects(None, None, Some((start, end))) returning Future.successful(entries)
     val uri = Uri("/phonebook").withQuery(Query("start" -> start.toString, "end" -> end.toString))
     Get(uri) ~> server.route ~> check {
@@ -157,7 +157,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
   }
 
   it should "return 400 for incorrect requests" in {
-    book.getSize _ expects() returning Future.successful(50)
+    book.getSize _ expects(*, *) returning Future.successful(50)
     val requests = List(
       Post("/phonebook", HttpEntity(ContentTypes.`application/json`, "")),
       Post("/phonebook", NameWrapper("name")),

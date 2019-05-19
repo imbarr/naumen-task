@@ -11,7 +11,8 @@ trait Book {
           phoneSubstring: Option[String] = None,
           range: Option[(Int, Int)] = None): Future[Seq[BookEntryWithId]]
 
-  def getSize: Future[Int]
+  def getSize(nameSubstring: Option[String] = None,
+              phoneSubstring: Option[String] = None): Future[Int]
 
   def changePhoneNumber(id: Int, phoneNumber: String): Future[Boolean]
 

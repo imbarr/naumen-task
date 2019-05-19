@@ -122,7 +122,7 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
       reject(MalformedQueryParamRejection("end", "start cannot be greater then end"))
     }
     else {
-      onSuccess(book.getSize) { total =>
+      onSuccess(book.getSize(nameSubstring, phoneSubstring)) { total =>
         if (start >= total) {
           reject(MalformedQueryParamRejection("start", "start cannot be greater then total number of entries"))
         }

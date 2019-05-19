@@ -17,27 +17,23 @@ class InMemoryBook extends Book {
   override def get(nameSubstring: Option[String],
                    phoneSubstring: Option[String],
                    range: Option[(Int, Int)]): Future[Seq[BookEntryWithId]] = {
-    val nameFiltered = nameSubstring match {
-      case Some(substring) => map.filter(_._2.name.contains(substring))
-      case None => map
-    }
-    val phoneFiltered = phoneSubstring match {
-      case Some(substring) => nameFiltered.filter(_._2.phoneNumber.contains(substring))
-      case None => nameFiltered
-    }
+    val filtered = containing(nameSubstring, phoneSubstring)
     val cropped = range match {
       case Some((start, end)) =>
         require(start >= 0 && end >= 0 && start <= end)
-        phoneFiltered.slice(start, end + 1)
+        filtered.slice(start, end + 1)
       case None =>
-        phoneFiltered
+        filtered
     }
     val result = cropped.map(join).toList
     Future.successful(result)
   }
 
-  override def getSize: Future[Int] =
-    Future.successful(map.size)
+  override def getSize(nameSubstring: Option[String],
+                       phoneSubstring: Option[String]): Future[Int] = {
+    val result = containing(nameSubstring, phoneSubstring).size
+    Future.successful(result)
+  }
 
   override def changePhoneNumber(id: Int, phoneNumber: String): Future[Boolean] =
     change(id, entry => BookEntry(entry.name, phoneNumber))
@@ -56,6 +52,18 @@ class InMemoryBook extends Book {
         map -= id
         Future.successful(true)
     }
+
+  private def containing(nameSubstring: Option[String],
+                         phoneSubstring: Option[String]): Map[Int, BookEntry] = {
+    val nameFiltered = nameSubstring match {
+      case Some(substring) => map.filter(_._2.name.contains(substring))
+      case None => map
+    }
+    phoneSubstring match {
+      case Some(substring) => nameFiltered.filter(_._2.phoneNumber.contains(substring))
+      case None => nameFiltered
+    }
+  }
 
   private def change(id: Int, modification: BookEntry => BookEntry): Future[Boolean] =
     map.get(id) match {
