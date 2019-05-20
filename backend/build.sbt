@@ -33,5 +33,7 @@ libraryDependencies ++= Seq(
 
   "org.flywaydb" % "flyway-core" % "5.2.4",
 
-  "com.microsoft.sqlserver" % "mssql-jdbc" % "7.0.0.jre10"
+  "com.microsoft.sqlserver" % "mssql-jdbc" % "7.0.0.jre10",
+
+  "com.google.jimfs" % "jimfs" % "1.1"
 )
