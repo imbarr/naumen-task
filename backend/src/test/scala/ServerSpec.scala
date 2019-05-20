@@ -5,23 +5,30 @@ import akka.http.scaladsl.server.Route
 import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.scalalogging.Logger
 import data.Implicits._
-import data.{BookEntry, BookEntryWithId, NameWrapper, PhoneNumberWrapper}
+import data._
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Assertion, BeforeAndAfter, FlatSpec}
 import storage.Book
 import util.CirceMarshalling._
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter with MockFactory {
   implicit val log = Logger("naumen-task-test")
+  implicit val executionContext = ExecutionContext.global
+
+  class MockableDataSaver() extends DataSaver(null)
 
   var book: Book = _
+  var dataSaver: MockableDataSaver = _
+  var taskManager: TaskManager = _
   var server: Server = _
 
   before {
     book = mock[Book]
-    server = new Server(book)
+    dataSaver = mock[MockableDataSaver]
+    taskManager = mock[TaskManager]
+    server = new Server(book, dataSaver, taskManager)
   }
 
   "Server" should "return all phonebook entries" in {
@@ -136,6 +143,43 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
     }
   }
 
+  it should "save phonebook" in {
+    val task = Future(block)
+    val id = 22
+    book.get _ expects(None, None, None) returning task
+    taskManager.count _ expects() returning 0
+    taskManager.add _ expects * returning id
+
+    Post("/files") ~> server.route ~> check {
+      assert(status == StatusCodes.Accepted)
+      assert(header("Location").contains(Location(s"/tasks/$id")))
+    }
+  }
+
+  it should "not save phonebook if another task in progress" in {
+    taskManager.count _ expects() returning 0
+    taskManager.count _ expects() returning 1
+    taskManager.add _ expects * returning 1
+    book.get _ expects(None, None, None) returning Future(block) anyNumberOfTimes()
+    Post("/files") ~> server.route
+    Post("/files") ~> server.route ~> check {
+      assert(status == StatusCodes.TooManyRequests)
+    }
+  }
+
+  it should "return status of task in progress" in
+    taskStatusTest(Future(block), TaskStatus("in progress"))
+
+  it should "return status of completed task" in
+    taskStatusTest(Future.successful(), TaskStatus("completed"))
+
+  it should "return status of failed task" in {
+    val message = "some message"
+    val taskResult = Future.failed(new Exception(message))
+    val expectedStatus = TaskStatus("failed", Some("some message"))
+    taskStatusTest(taskResult, expectedStatus)
+  }
+
   it should "return 404 for non-existing resources" in {
     val id = 20
     val name = "name"
@@ -143,9 +187,11 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
     book.remove _ expects id returning Future.successful(false) anyNumberOfTimes()
     book.replace _ expects(id, name, phone) returning Future.successful(false) anyNumberOfTimes()
     book.getById _ expects id returning Future.successful(None) anyNumberOfTimes()
+    taskManager.get _ expects id returning None
     val requests = List(
       Get("/something"),
       Get(s"/phonebook/$id"),
+      Get(s"/tasks/$id"),
       Delete(s"/phonebook/$id"),
       Patch(s"/phonebook/$id", BookEntry(name, phone))
     )
@@ -160,7 +206,8 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
     val requests = List(
       Delete("/phonebook"),
       Patch("/phonebook"),
-      Put(s"/phonebook/$id")
+      Put(s"/phonebook/$id"),
+      Get("/files")
     )
 
     testForAll(requests) {
@@ -189,4 +236,19 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       request ~> Route.seal(server.route) ~> check {
         assertion
       }
+
+  private def taskStatusTest(taskResult: Future[Unit], expectedStatus: TaskStatus): Unit = {
+    val id = 1
+    taskManager.get _ expects id returning Some(taskResult)
+    Get(s"/tasks/$id") ~> server.route ~> check {
+      assert(status == StatusCodes.OK)
+      val result = responseAs[TaskStatus]
+      assert(result == expectedStatus)
+    }
+  }
+
+  private def block: List[Nothing] = {
+    Thread.sleep(1000)
+    Nil
+  }
 }

@@ -1,4 +1,3 @@
-import _root_.util.CirceMarshalling._
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
@@ -6,6 +5,7 @@ import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.RouteResult.route2HandlerFlow
+import util.CirceMarshalling._
 import akka.http.scaladsl.server._
 import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.Logger
@@ -15,10 +15,13 @@ import data._
 import storage.Book
 
 import scala.concurrent.Future
+import scala.util.{Failure, Success}
 
-class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
+class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager)(implicit log: Logger, system: ActorSystem) {
   implicit val materializer = ActorMaterializer()
   implicit val executionContext = materializer.executionContext
+
+  val maximumNumberOfTasks = 1
 
   val CORSHeaders = List(
     // Wildcard as allowed origin is vulnerable to cross-site request forgery.
@@ -62,6 +65,14 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
           phonebookEntry
         }
     } ~
+      path("files") {
+        files
+      } ~
+      pathPrefix("tasks") {
+        path(IntNumber) {
+          task
+        }
+      } ~
       path("ffoknit") {
         complete(StatusCodes.ImATeapot)
       }
@@ -86,6 +97,36 @@ class Server(book: Book)(implicit log: Logger, system: ActorSystem) {
           book.remove(id)
         }
       }
+
+  private def files: Route =
+    post {
+      if (taskManager.count >= maximumNumberOfTasks) {
+        complete(StatusCodes.TooManyRequests, "Maximum number of asynchronous tasks exceeded")
+      }
+      else {
+        val getAll = book.get()
+        val task = getAll.flatMap(dataSaver.save("phonebook", _))
+        val id = taskManager.add(task)
+        respondWithHeader(Location(s"/tasks/$id")) {
+          complete(StatusCodes.Accepted)
+        }
+      }
+    }
+
+  private def task(id: Int): Route =
+    get {
+      taskManager.get(id) match {
+        case None => reject()
+        case Some(task) =>
+          complete {
+            task.value match {
+              case Some(Success(_)) => TaskStatus("completed")
+              case Some(Failure(error)) => TaskStatus("failed", Some(error.getMessage))
+              case None => TaskStatus("in progress")
+            }
+          }
+      }
+    }
 
   private def createEntry: Route =
     entity(as[BookEntry]) { entry =>

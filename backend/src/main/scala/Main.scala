@@ -1,3 +1,5 @@
+import java.nio.file.Paths
+
 import akka.actor.ActorSystem
 import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.Logger
@@ -15,13 +17,15 @@ object Main extends App {
   implicit val executionContext = materializer.executionContext
 
   pureconfig.loadConfig[Config] match {
-    case Left(_) =>
-      log.error("FATAL: failed to load configuration")
+    case Left(failures) =>
+      log.error("FATAL: failed to load configuration: " + failures)
       System.exit(1)
     case Right(config) =>
       Migration.migrate(config.database)
       val book = getDatabaseBook(config.database)
-      startServer(config.server, book)
+      val directoryPath = Paths.get(config.fileSystem.storage)
+      val dataSaver = new DataSaver(directoryPath)
+      startServer(config.server, book, dataSaver)
   }
 
   def getDatabaseBook(config: DatabaseConfig): DatabaseBook = {
@@ -29,9 +33,10 @@ object Main extends App {
     new DatabaseBook(database)
   }
 
-  def startServer(config: ServerConfig, book: Book): Unit = {
+  def startServer(config: ServerConfig, book: Book, dataSaver: DataSaver): Unit = {
+    val taskManager = new TaskManager()
     log.info("Starting server...")
-    val bindingFuture = new Server(book).start(config)
+    val bindingFuture = new Server(book, dataSaver, taskManager).start(config)
     log.info(s"Server is up on ${config.interface}:${config.port}. Press ENTER to quit.")
     bindingFuture.flatMap(binding => {
       StdIn.readLine()
