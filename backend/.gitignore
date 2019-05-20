@@ -18,3 +18,6 @@ project/plugins/project/
 
 # app configuration
 src/main/resources/application.conf
+
+# other
+saved/
