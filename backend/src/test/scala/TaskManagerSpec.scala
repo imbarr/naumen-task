@@ -1,4 +1,5 @@
 import org.scalatest.FlatSpec
+import util.TestUtils._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -19,8 +20,8 @@ class TaskManagerSpec extends FlatSpec {
   it should "return number of tasks in progress" in {
     val manager = new TaskManager()
     val tasks = List(
-      Future(Thread.sleep(1000)),
-      Future(Thread.sleep(1000)),
+      longRunning,
+      longRunning,
       Future.successful(),
       Future.failed(new Exception),
       Future.failed(new Exception)

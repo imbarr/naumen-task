@@ -8,8 +8,8 @@ import storage.{Book, DatabaseBook}
 import scala.concurrent.ExecutionContext
 
 class DatabaseBookSpec extends BookBehaviours {
-  implicit val executionContext = ExecutionContext.global
   implicit val log = Logger("naumen-task-test")
+  implicit val executionContext = ExecutionContext.global
 
   val config = pureconfig
     .loadConfig[Config]

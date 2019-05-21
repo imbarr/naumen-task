@@ -1,21 +1,16 @@
 import java.nio.file.{FileSystem, Files, Path}
 
 import com.google.common.jimfs.{Configuration, Jimfs}
-import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 import io.circe.parser.parse
 import org.scalatest.{BeforeAndAfter, FlatSpec}
+import util.TestUtils._
 
 import scala.collection.JavaConverters.asScalaIteratorConverter
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
+
 
 class DataSaverSpec extends FlatSpec with BeforeAndAfter {
   implicit val executionContext = ExecutionContext.global
-
-  case class Class(string: String, int: Int, boolean: Boolean)
-
-  implicit val encoder = deriveEncoder[Class]
-  implicit val decoder = deriveDecoder[Class]
 
   var fileSystem: FileSystem = _
   var directory: Path = _
@@ -61,7 +56,4 @@ class DataSaverSpec extends FlatSpec with BeforeAndAfter {
     val files = Files.list(directory).iterator().asScala.toList
     files.map(_.getFileName.toString)
   }
-
-  def await[T](future: Future[T]): T =
-    Await.result(future, Duration.Inf)
 }

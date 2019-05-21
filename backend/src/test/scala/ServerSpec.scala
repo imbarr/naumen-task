@@ -10,6 +10,7 @@ import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Assertion, BeforeAndAfter, FlatSpec}
 import storage.Book
 import util.CirceMarshalling._
+import util.TestUtils._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -144,9 +145,8 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
   }
 
   it should "save phonebook" in {
-    val task = Future(block)
     val id = 22
-    book.get _ expects(None, None, None) returning task
+    book.get _ expects(None, None, None) returning longRunning
     taskManager.count _ expects() returning 0
     taskManager.add _ expects * returning id
 
@@ -160,7 +160,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
     taskManager.count _ expects() returning 0
     taskManager.count _ expects() returning 1
     taskManager.add _ expects * returning 1
-    book.get _ expects(None, None, None) returning Future(block) anyNumberOfTimes()
+    book.get _ expects(None, None, None) returning longRunning anyNumberOfTimes()
     Post("/files") ~> server.route
     Post("/files") ~> server.route ~> check {
       assert(status == StatusCodes.TooManyRequests)
@@ -168,7 +168,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
   }
 
   it should "return status of task in progress" in
-    taskStatusTest(Future(block), TaskStatus("in progress"))
+    taskStatusTest(longRunning, TaskStatus("in progress"))
 
   it should "return status of completed task" in
     taskStatusTest(Future.successful(), TaskStatus("completed"))
@@ -245,10 +245,5 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       val result = responseAs[TaskStatus]
       assert(result == expectedStatus)
     }
-  }
-
-  private def block: List[Nothing] = {
-    Thread.sleep(1000)
-    Nil
   }
 }
