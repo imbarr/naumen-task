@@ -22,7 +22,6 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager)(implici
   implicit val executionContext = materializer.executionContext
 
   val maximumNumberOfTasks = 1
-
   val CORSHeaders = List(
     // Wildcard as allowed origin is vulnerable to cross-site request forgery.
     // It is left like this for easier application setup.
@@ -31,7 +30,7 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager)(implici
     `Access-Control-Expose-Headers`("X-Total-Count", "Location")
   )
 
-  val allowedMethods = `Access-Control-Allow-Methods`(
+  val allowedMethodsHeader = `Access-Control-Allow-Methods`(
     HttpMethods.OPTIONS, HttpMethods.GET, HttpMethods.POST, HttpMethods.PATCH, HttpMethods.DELETE
   )
 
@@ -40,14 +39,14 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager)(implici
 
   implicit def exceptionHandler: ExceptionHandler = ExceptionHandler {
     case error =>
-      log.error("Error occurred while processing request.", error)
+      log.error("Error occurred while processing request", error)
       complete(StatusCodes.InternalServerError)
   }
 
   def route: Route =
     respondWithHeaders(CORSHeaders) {
       options {
-        respondWithHeader(allowedMethods) {
+        respondWithHeader(allowedMethodsHeader) {
           complete(StatusCodes.OK)
         }
       } ~
@@ -70,7 +69,7 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager)(implici
       } ~
       pathPrefix("tasks") {
         path(IntNumber) {
-          task
+          taskWithId
         }
       } ~
       path("ffoknit") {
@@ -79,7 +78,9 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager)(implici
 
   private def phonebook: Route =
     post {
-      createEntry
+      entity(as[BookEntry]) {
+        createEntry
+      }
     } ~
       get {
         getEntries
@@ -93,48 +94,35 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager)(implici
         modifyEntry(id)
       } ~
       delete {
-        predicate {
+        notFoundIfFalse {
           book.remove(id)
         }
       }
 
   private def files: Route =
     post {
-      if (taskManager.count >= maximumNumberOfTasks) {
+      if (taskManager.count >= maximumNumberOfTasks)
         complete(StatusCodes.TooManyRequests, "Maximum number of asynchronous tasks exceeded")
-      }
-      else {
-        val getAll = book.get()
-        val task = getAll.flatMap(dataSaver.save("phonebook", _))
-        val id = taskManager.add(task)
-        respondWithHeader(Location(s"/tasks/$id")) {
-          complete(StatusCodes.Accepted)
-        }
-      }
+      else
+        savePhonebook
     }
 
-  private def task(id: Int): Route =
+  private def taskWithId(id: Int): Route =
     get {
       taskManager.get(id) match {
         case None => reject()
         case Some(task) =>
-          complete {
-            task.value match {
-              case Some(Success(_)) => TaskStatus("completed")
-              case Some(Failure(error)) => TaskStatus("failed", Some(error.getMessage))
-              case None => TaskStatus("in progress")
-            }
-          }
+          taskRoute(task)
       }
     }
 
-  private def createEntry: Route =
-    entity(as[BookEntry]) { entry =>
-      val futureId = book.add(entry)
-      val futureHeaders = futureId.map(id => List(Location(s"/phonebook/$id")))
-      val futureResponse = futureHeaders.map(headers => HttpResponse(StatusCodes.Created, headers))
-      complete(futureResponse)
+  private def createEntry(entry: BookEntry): Route = {
+    onSuccess(book.add(entry)) { id =>
+      respondWithHeader(Location(s"/phonebook/$id")) {
+        complete(StatusCodes.Created)
+      }
     }
+  }
 
   private def getEntries: Route =
     parameters('nameSubstring.?, 'phoneSubstring.?, 'start.as[Int].?, 'end.as[Int].?) {
@@ -157,20 +145,38 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager)(implici
 
   private def modifyEntry(id: Int): Route =
     entity(as[BookEntry]) { entry =>
-      predicate {
+      notFoundIfFalse {
         book.replace(id, entry.name, entry.phone)
       }
     } ~
       entity(as[NameWrapper]) { wrapper =>
-        predicate {
+        notFoundIfFalse {
           book.changeName(id, wrapper.name)
         }
       } ~
       entity(as[PhoneNumberWrapper]) { wrapper =>
-        predicate {
+        notFoundIfFalse {
           book.changePhoneNumber(id, wrapper.phone)
         }
       }
+
+  private def savePhonebook: Route = {
+    val getAll = book.get()
+    val task = getAll.flatMap(dataSaver.save("phonebook", _))
+    val id = taskManager.add(task)
+    respondWithHeader(Location(s"/tasks/$id")) {
+      complete(StatusCodes.Accepted)
+    }
+  }
+
+  private def taskRoute(task: Future[Unit]): Route =
+    complete {
+      task.value match {
+        case Some(Success(_)) => TaskStatus("completed")
+        case Some(Failure(error)) => TaskStatus("failed", Some(error.getMessage))
+        case None => TaskStatus("in progress")
+      }
+    }
 
   private def getEntriesInRange(nameSubstring: Option[String],
                                 phoneSubstring: Option[String],
@@ -180,15 +186,18 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager)(implici
       reject(MalformedQueryParamRejection("end", "start cannot be greater then end"))
     }
     else {
-      onSuccess(book.getSize(nameSubstring, phoneSubstring)) { total =>
-        respondWithHeader(RawHeader("X-Total-Count", total.toString)) {
-          complete(book.get(nameSubstring, phoneSubstring, Some((start, end))))
+      val totalFuture = book.getSize(nameSubstring, phoneSubstring)
+      onSuccess(totalFuture) { total =>
+        val totalHeader = RawHeader("X-Total-Count", total.toString)
+        respondWithHeader(totalHeader) {
+          val result = book.get(nameSubstring, phoneSubstring, Some((start, end)))
+          complete(result)
         }
       }
     }
   }
 
-  private def predicate(predicate: Future[Boolean]): Route =
+  private def notFoundIfFalse(predicate: Future[Boolean]): Route =
     Route.seal {
       onSuccess(predicate) { success =>
         if (success)
