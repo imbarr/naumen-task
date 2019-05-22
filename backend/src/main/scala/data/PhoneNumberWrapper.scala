@@ -1,3 +1,3 @@
 package data
 
-case class PhoneNumberWrapper(phone: String)
+case class PhoneNumberWrapper(phone: Phone)
