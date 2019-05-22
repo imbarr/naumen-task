@@ -1,6 +1,6 @@
 package storage
 
-import data.{BookEntry, BookEntryWithId}
+import data.{BookEntry, BookEntryWithId, Phone}
 
 import scala.concurrent.Future
 
@@ -16,11 +16,11 @@ trait Book {
 
   def getById(id: Int): Future[Option[BookEntry]]
 
-  def changePhoneNumber(id: Int, phoneNumber: String): Future[Boolean]
+  def changePhoneNumber(id: Int, phone: Phone): Future[Boolean]
 
   def changeName(id: Int, name: String): Future[Boolean]
 
-  def replace(id: Int, name: String, phoneNumber: String): Future[Boolean]
+  def replace(id: Int, name: String, phone: Phone): Future[Boolean]
 
   def remove(id: Int): Future[Boolean]
 }

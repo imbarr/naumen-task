@@ -1,6 +1,6 @@
 package storage
 
-import data.{BookEntry, BookEntryWithId}
+import data.{BookEntry, BookEntryWithId, Phone}
 
 import scala.concurrent.Future
 
@@ -38,14 +38,14 @@ class InMemoryBook extends Book {
   override def getById(id: Int): Future[Option[BookEntry]] =
     Future.successful(map.get(id))
 
-  override def changePhoneNumber(id: Int, phoneNumber: String): Future[Boolean] =
-    change(id, entry => BookEntry(entry.name, phoneNumber))
+  override def changePhoneNumber(id: Int, phone: Phone): Future[Boolean] =
+    change(id, entry => BookEntry(entry.name, phone))
 
   override def changeName(id: Int, name: String): Future[Boolean] =
     change(id, entry => BookEntry(name, entry.phone))
 
-  override def replace(id: Int, name: String, phoneNumber: String): Future[Boolean] =
-    change(id, _ => BookEntry(name, phoneNumber))
+  override def replace(id: Int, name: String, phone: Phone): Future[Boolean] =
+    change(id, _ => BookEntry(name, phone))
 
   override def remove(id: Int): Future[Boolean] =
     map.get(id) match {
@@ -62,8 +62,8 @@ class InMemoryBook extends Book {
       case Some(substring) => map.filter(_._2.name.contains(substring))
       case None => map
     }
-    phoneSubstring match {
-      case Some(substring) => nameFiltered.filter(_._2.phone.contains(substring))
+    phoneSubstring.map(Phone.withoutDelimiters) match {
+      case Some(substring) => nameFiltered.filter(_._2.phone.withoutDelimiters.contains(substring))
       case None => nameFiltered
     }
   }

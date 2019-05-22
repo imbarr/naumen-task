@@ -1,5 +1,5 @@
 package storage
-import data.{BookEntry, BookEntryWithId}
+import data.{BookEntry, BookEntryWithId, Phone}
 import slick.jdbc.GetResult
 import slick.jdbc.SQLServerProfile.api._
 import storage.tables.PhoneNumbers
@@ -11,16 +11,16 @@ class DatabaseBook(database: Database)(implicit context: ExecutionContext) exten
   private val charindex = SimpleFunction.binary[String, String, Int]("charindex")
 
   override def add(entry: BookEntry): Future[Int] = {
-    val add = phones.map(p => (p.name, p.phone)) += (entry.name, entry.phone)
+    val add = phones.map(p => (p.name, p.phone)) += (entry.name, entry.phone.withoutDelimiters)
     val getResult = GetResult(r => r.nextInt())
-    val identity = sql"select @@IDENTITY".as[Int](getResult).head
-    database.run(add.andThen(identity).withPinnedSession)
+    val getIdentity = sql"select @@IDENTITY".as[Int](getResult).head
+    database.run(add.andThen(getIdentity).withPinnedSession)
   }
 
   override def get(nameSubstring: Option[String],
                    phoneSubstring: Option[String],
                    range: Option[(Int, Int)]): Future[Seq[BookEntryWithId]] = {
-    val filtered = containing(nameSubstring, phoneSubstring)
+    val filtered = containingQuery(nameSubstring, phoneSubstring)
     val cropped = range match {
       case Some((start, end)) =>
         require(start >= 0 && end >= 0 && start <= end)
@@ -28,12 +28,14 @@ class DatabaseBook(database: Database)(implicit context: ExecutionContext) exten
       case None =>
         filtered
     }
-    database.run(cropped.result).map(toEntries)
+    for {
+      tuples <- database.run(cropped.result)
+    } yield tuples.flatMap(tupleToBookEntryWithId)
   }
 
   override def getSize(nameSubstring: Option[String],
                         phoneSubstring: Option[String]): Future[Int] = {
-    val query = containing(nameSubstring, phoneSubstring).length
+    val query = containingQuery(nameSubstring, phoneSubstring).length
     database.run(query.result)
   }
 
@@ -43,11 +45,13 @@ class DatabaseBook(database: Database)(implicit context: ExecutionContext) exten
       .map(t => (t.name, t.phone))
       .result
       .headOption
-    database.run(query).map(_.map(BookEntry.tupled))
+    for {
+      tupleOption <- database.run(query)
+    } yield tupleOption.flatMap(tupleToBookEntry)
   }
 
-  override def changePhoneNumber(id: Int, phoneNumber: String): Future[Boolean] = {
-    val query = phones.filter(_.id === id).map(_.phone).update(phoneNumber)
+  override def changePhoneNumber(id: Int, phone: Phone): Future[Boolean] = {
+    val query = phones.filter(_.id === id).map(_.phone).update(phone.withoutDelimiters)
     database.run(query).map(_ == 1)
   }
 
@@ -56,8 +60,8 @@ class DatabaseBook(database: Database)(implicit context: ExecutionContext) exten
     database.run(query).map(_ == 1)
   }
 
-  override def replace(id: Int, name: String, phoneNumber: String): Future[Boolean] = {
-    val query = phones.filter(_.id === id).map(p => (p.name, p.phone)).update((name, phoneNumber))
+  override def replace(id: Int, name: String, phone: Phone): Future[Boolean] = {
+    val query = phones.filter(_.id === id).map(p => (p.name, p.phone)).update((name, phone.withoutDelimiters))
     database.run(query).map(_ == 1)
   }
 
@@ -66,18 +70,28 @@ class DatabaseBook(database: Database)(implicit context: ExecutionContext) exten
     database.run(query).map(_ == 1)
   }
 
-  private def containing(nameSubstring: Option[String],
-                         phoneSubstring: Option[String]) = {
+  private def containingQuery(nameSubstring: Option[String],
+                              phoneSubstring: Option[String]) = {
     val nameFiltered = nameSubstring match {
       case Some(substring) => phones.filter(p => charindex(substring, p.name) > 0)
       case None => phones
     }
-    phoneSubstring match {
+    phoneSubstring.map(Phone.withoutDelimiters) match {
       case Some(substring) => nameFiltered.filter(p => charindex(substring, p.phone) > 0)
       case None => nameFiltered
     }
   }
 
-  private def toEntries(tuples: Seq[(Int, String, String)]): Seq[BookEntryWithId] =
-    tuples.map(BookEntryWithId.tupled)
+  private def tupleToBookEntryWithId(tuple: (Int, String, String)): Option[BookEntryWithId] =
+    for {
+      phone <- Phone.fromString(tuple._3).toOption
+      name = tuple._2
+      id = tuple._1
+    } yield BookEntryWithId(id, name, phone)
+
+  private def tupleToBookEntry(tuple: (String, String)): Option[BookEntry] =
+    for {
+      phone <- Phone.fromString(tuple._2).toOption
+      name = tuple._1
+    } yield BookEntry(name, phone)
 }

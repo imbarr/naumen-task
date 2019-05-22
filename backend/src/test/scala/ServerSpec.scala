@@ -20,6 +20,14 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
 
   class MockableDataSaver() extends DataSaver(null)
 
+  val entries = List(
+    BookEntryWithId(22, "John", Phone.fromString("+7 800 5553535").right.get),
+    BookEntryWithId(11, "Boris", Phone.fromString("+78005553535").right.get),
+    BookEntryWithId(121, "Victor", Phone.fromString("+79228222201").right.get)
+  )
+  val entryWithId = entries.head
+  val entry = BookEntry(entryWithId.name, entryWithId.phone)
+
   var book: Book = _
   var dataSaver: MockableDataSaver = _
   var taskManager: TaskManager = _
@@ -33,10 +41,6 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
   }
 
   "Server" should "return all phonebook entries" in {
-    val entries = List(
-      BookEntryWithId(22, "John", "343453"),
-      BookEntryWithId(11, "Boris", "3354354")
-    )
     book.get _ expects(None, None, None) returning Future.successful(entries)
     Get("/phonebook") ~> server.route ~> check {
       assert(status == StatusCodes.OK)
@@ -49,10 +53,6 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
     val start = 11
     val end = 12
     val total = 100
-    val entries = List(
-      BookEntryWithId(22, "John", "343453"),
-      BookEntryWithId(11, "Boris", "3354354")
-    )
     book.getSize _ expects(*, *) returning Future.successful(total)
     book.get _ expects(None, None, Some((start, end))) returning Future.successful(entries)
     val uri = Uri("/phonebook").withQuery(Query("start" -> start.toString, "end" -> end.toString))
@@ -67,7 +67,6 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
 
   it should "return entry by id" in {
     val id = 22
-    val entry = BookEntry("Boris", "33434344")
     book.getById _ expects id returning Future.successful(Some(entry))
     Get(s"/phonebook/$id") ~> server.route ~> check {
       assert(status == StatusCodes.OK)
@@ -77,7 +76,6 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
   }
 
   it should "create new phonebook entry" in {
-    val entry = BookEntry("Bob", "dgfdgfdf")
     val id = 122
     book.add _ expects entry returning Future.successful(id)
     Post("/phonebook", entry) ~> server.route ~> check {
@@ -88,43 +86,35 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
 
   it should "find entries by name substring" in {
     val substring = "Doe"
-    val foundEntries = List(
-      BookEntryWithId(11, "John Doe", "456456"),
-      BookEntryWithId(22, "Jane Doe", "232323")
-    )
-    book.get _ expects(Some(substring), None, None) returning Future.successful(foundEntries)
+    book.get _ expects(Some(substring), None, None) returning Future.successful(entries)
 
     val uri = Uri("/phonebook").withQuery(Query("nameSubstring" -> substring))
     Get(uri) ~> server.route ~> check {
       assert(status == StatusCodes.OK)
       val result = responseAs[List[BookEntryWithId]]
-      assert(result == foundEntries)
+      assert(result == entries)
     }
   }
 
   it should "find entries by telephone substring" in {
     val substring = "+7"
-    val foundEntries = List(
-      BookEntryWithId(11, "John Doe", "+7456456"),
-      BookEntryWithId(22, "Jane Doe", "+7232323")
-    )
-    book.get _ expects(None, Some(substring), None) returning Future.successful(foundEntries)
+    book.get _ expects(None, Some(substring), None) returning Future.successful(entries)
 
     val uri = Uri("/phonebook").withQuery(Query("phoneSubstring" -> substring))
     Get(uri) ~> server.route ~> check {
       assert(status == StatusCodes.OK)
       val result = responseAs[List[BookEntryWithId]]
-      assert(result == foundEntries)
+      assert(result == entries)
     }
   }
 
   it should "update entry" in {
     val id = 11
     val name = "name"
-    val phone = "8995235523"
-    book.replace _ expects(id, name, phone) returning Future.successful(true) noMoreThanOnce()
-    book.changeName _ expects(id, name) returning Future.successful(true) noMoreThanOnce()
-    book.changePhoneNumber _ expects(id, phone) returning Future.successful(true) noMoreThanOnce()
+    val phone = entry.phone
+    book.replace _ expects(id, name, phone) returning Future.successful(true)
+    book.changeName _ expects(id, name) returning Future.successful(true)
+    book.changePhoneNumber _ expects(id, phone) returning Future.successful(true)
     val requests = List(
       Patch(s"/phonebook/$id", BookEntry(name, phone)),
       Patch(s"/phonebook/$id", NameWrapper(name)),
@@ -183,7 +173,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
   it should "return 404 for non-existing resources" in {
     val id = 20
     val name = "name"
-    val phone = "345353"
+    val phone = entry.phone
     book.remove _ expects id returning Future.successful(false) anyNumberOfTimes()
     book.replace _ expects(id, name, phone) returning Future.successful(false) anyNumberOfTimes()
     book.getById _ expects id returning Future.successful(None) anyNumberOfTimes()
@@ -223,7 +213,8 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
       Patch(s"/phonebook/22", "{\"some\": \"json\"}"),
       Get(Uri("/phonebook").withQuery(Query("start" -> "11", "end" -> "lul"))),
       Get(Uri("/phonebook").withQuery(Query("start" -> "32", "end" -> "22"))),
-      Get(Uri("/phonebook").withQuery(Query("start" -> "50")))
+      Get(Uri("/phonebook").withQuery(Query("start" -> "50"))),
+      Post("/phonebook", Map("name" -> "John", "phone" -> "88005553535"))
     )
 
     testForAll(requests) {

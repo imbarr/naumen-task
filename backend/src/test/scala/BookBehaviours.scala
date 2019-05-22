@@ -1,4 +1,4 @@
-import data.{BookEntry, BookEntryWithId}
+import data.{BookEntry, BookEntryWithId, Phone}
 import org.scalatest.{Assertion, BeforeAndAfter, FlatSpec}
 import storage.Book
 
@@ -7,11 +7,13 @@ import scala.concurrent.{Await, Future}
 
 abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
   val entries = List(
-    BookEntry("John Doe", "88005553535"),
-    BookEntry("Jane Doe", "+79223101010"),
-    BookEntry("Jane Doe", "+79223101010"),
-    BookEntry("Someone Else", "dfgdgdgdfgd")
+    BookEntry("John Doe", Phone.fromString("+78005553535").right.get),
+    BookEntry("Jane Doe", Phone.fromString("+79223101010").right.get),
+    BookEntry("Jane Doe", Phone.fromString("+79273101010").right.get),
+    BookEntry("Someone Else", Phone.fromString("+79223101010").right.get)
   )
+
+  val somePhone = Phone.fromString("+39 06 698577777").right.get
 
   var book: Book
   var added: List[BookEntryWithId] = _
@@ -69,7 +71,7 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
     }
 
     it should "change phone number" in changeEntriesTest { entry =>
-      val newPhoneNumber = entry.phone + "0"
+      val newPhoneNumber = somePhone
       val changedEntry = BookEntryWithId(entry.id, entry.name, newPhoneNumber)
       val success = await(book.changePhoneNumber(entry.id, newPhoneNumber))
       assert(success)
@@ -86,7 +88,7 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
 
     it should "replace entry" in changeEntriesTest { entry =>
       val newName = entry.name + "0"
-      val newPhoneNumber = entry.phone + "0"
+      val newPhoneNumber = somePhone
       val changedEntry = BookEntryWithId(entry.id, newName, newPhoneNumber)
       val success = await(book.replace(entry.id, newName, newPhoneNumber))
       assert(success)
@@ -108,19 +110,20 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
     }
 
     it should "find elements by telephone substring" in {
-      for (substring <- List("800", "+7", "000000")) {
-        val expected = await(book.get()).filter(_.phone.contains(substring))
+      for (substring <- List("800--555", "+7", "000000")) {
+        val plain = Phone.withoutDelimiters(substring)
+        val expected = await(book.get()).filter(_.phone.withoutDelimiters.contains(plain))
         val actual = await(book.get(phoneSubstring = Some(substring)))
-        assert(expected.toSet == actual.toSet)
+        assert(actual.toSet == expected.toSet)
       }
     }
 
     it should "not change state if entry does not exist" in {
       val old = await(book.get())
       val id = old.map(_.id).max + 1
-      assert(!await(book.changePhoneNumber(id, "")))
+      assert(!await(book.changePhoneNumber(id, somePhone)))
       assert(!await(book.changeName(id, "")))
-      assert(!await(book.replace(id, "", "")))
+      assert(!await(book.replace(id, "", somePhone)))
       assert(!await(book.remove(id)))
       assert(old.toSet == await(book.get()).toSet)
     }
