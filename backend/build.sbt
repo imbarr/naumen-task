@@ -35,5 +35,7 @@ libraryDependencies ++= Seq(
 
   "com.microsoft.sqlserver" % "mssql-jdbc" % "7.0.0.jre10",
 
-  "com.google.jimfs" % "jimfs" % "1.1"
+  "com.google.jimfs" % "jimfs" % "1.1",
+
+  "com.googlecode.libphonenumber" % "libphonenumber" % "8.10.12"
 )
