@@ -14,10 +14,10 @@ object Phone {
   def fromString(phone: String): Either[Throwable, Phone] =
     Try {
       val result = parser.parse(phone, unknownRegion)
-      require(parser.isValidNumber(result))
       // It is not likely that we should consider phone
       // number extention, they are used very rarely now
-      require(!result.hasExtension)
+      if (!parser.isValidNumber(result) || result.hasExtension)
+        throw new IllegalArgumentException("phone number is not valid")
       new Phone(result)
     }.toEither
 

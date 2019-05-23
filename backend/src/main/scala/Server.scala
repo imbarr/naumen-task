@@ -43,6 +43,12 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager)(implici
       complete(StatusCodes.InternalServerError)
   }
 
+  implicit def rejectionHandler: RejectionHandler = RejectionHandler.newBuilder()
+    .handle { case MalformedRequestContentRejection(_, cause) =>
+      val message = cause.getMessage.split('\n').head.split(':').last.trim
+      complete(StatusCodes.BadRequest, message)
+    }.result()
+
   def route: Route =
     respondWithHeaders(CORSHeaders) {
       options {
