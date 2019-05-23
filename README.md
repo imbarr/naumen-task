@@ -35,84 +35,53 @@
 
 ```http request
 POST /phonebook
-
 {
   "name": "Alex",
   "phone": "+78005553535"
 }
-```
 
-```
 201 Created
 Location: /phonebook/22
 ```
 
-#### Получение всех записей из справочника
+#### Запросить данные из справочника
+Параметры *nameSubstring*, *phoneSubstring*, *start*, *end* можно комбинировать
+произвольным образом, но если есть *start*, то должен быть и *end*
 
 ```http request
-GET /phonebook
-```
+GET /phonebook?nameSubstring=Doe&phoneSubstring=%2B7-922+600
 
-```
-200 OK
-[
-    {
-        "id": 22,
-        "name": "John",
-        "phone": "88005553535"
-    },
-    {
-        "id": 33,
-        "name": "Jane",
-        "phone": "88005553535"
-    },
-    ...
-]
-```
-
-#### Поиск записей по подстроке имени
-
-```http request
-GET /phonebook?nameSubstring=Doe
-```
-
-```
 200 OK
 [
     {
         "id": 22,
         "name": "John Doe",
-        "phone": "88005553535"
+        "phone": "+79226005555"
     },
     {
         "id": 33,
         "name": "Jane Doe",
-        "phone": "88005553535"
+        "phone": "+79226001111"
     },
-    ...
-]
+    {
 ```
-
-#### Поиск записей по подстроке номера телефона
 
 ```http request
-GET /phonebook?phoneSubstring=%2B7922
-```
+GET /phonebook?nameSubstring=Doe&start=10&end=11
 
-```
 200 OK
+X-Total-Count: 20
 [
     {
         "id": 22,
         "name": "John Doe",
-        "phone": "+79222222222"
+        "phone": "+79226005555"
     },
     {
         "id": 33,
-        "name": "Jane Doe",
-        "phone": "+79222222292"
-    },
-    ...
+        "name": "Jane DOe",
+        "phone": "+79226001111"
+    }
 ]
 ```
 
@@ -126,16 +95,14 @@ DELETE /phonebook/22
 
 ```http request
 PATCH /phonebook/22
-
 {
   "name": "John",
-  "phone": "88005553535"
+  "phone": "+78005553535"
 }
 ```
 
 ```http request
 PATCH /phonebook/22
-
 {
   "name": "John"
 }
@@ -143,9 +110,8 @@ PATCH /phonebook/22
 
 ```http request
 PATCH /phonebook/22
-
 {
-  "phone": "88005553535"
+  "phone": "+29022158"
 }
 ```
 
@@ -154,3 +120,4 @@ PATCH /phonebook/22
 * [Slick](http://slick.lightbend.com/)
 * [Circe](https://circe.github.io/circe/)
 * [React-Admin](https://marmelab.com/react-admin/)
+* [libphonenumber](https://github.com/googlei18n/libphonenumber)
