@@ -1,4 +1,6 @@
 package storage
+
+import com.microsoft.sqlserver.jdbc.SQLServerException
 import data.{BookEntry, BookEntryWithId, Phone}
 import slick.jdbc.GetResult
 import slick.jdbc.SQLServerProfile.api._
@@ -10,11 +12,14 @@ class DatabaseBook(database: Database)(implicit context: ExecutionContext) exten
   private val phones = TableQuery[PhoneNumbers]
   private val charindex = SimpleFunction.binary[String, String, Int]("charindex")
 
-  override def add(entry: BookEntry): Future[Int] = {
+  override def add(entry: BookEntry): Future[Option[Int]] = {
     val add = phones.map(p => (p.name, p.phone)) += (entry.name, entry.phone.withoutDelimiters)
     val getResult = GetResult(r => r.nextInt())
     val getIdentity = sql"select @@IDENTITY".as[Int](getResult).head
-    database.run(add.andThen(getIdentity).withPinnedSession)
+    database.run(add.andThen(getIdentity).withPinnedSession).map(Some.apply).recover {
+      case exception: SQLServerException if isUniqueConstraintViolation(exception) =>
+        None
+    }
   }
 
   override def get(nameSubstring: Option[String],
@@ -34,7 +39,7 @@ class DatabaseBook(database: Database)(implicit context: ExecutionContext) exten
   }
 
   override def getSize(nameSubstring: Option[String],
-                        phoneSubstring: Option[String]): Future[Int] = {
+                       phoneSubstring: Option[String]): Future[Int] = {
     val query = containingQuery(nameSubstring, phoneSubstring).length
     database.run(query.result)
   }
@@ -80,6 +85,11 @@ class DatabaseBook(database: Database)(implicit context: ExecutionContext) exten
       case Some(substring) => nameFiltered.filter(p => charindex(substring, p.phone) > 0)
       case None => nameFiltered
     }
+  }
+
+  private def isUniqueConstraintViolation(exception: SQLServerException): Boolean = {
+    val code = exception.getErrorCode
+    code == 2627 || code == 2601
   }
 
   private def tupleToBookEntryWithId(tuple: (Int, String, String)): Option[BookEntryWithId] =

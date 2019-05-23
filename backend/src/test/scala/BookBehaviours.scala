@@ -28,6 +28,11 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
       assert(added.toSet subsetOf all)
     }
 
+    it should "not add duplicates" in {
+      val result = await(book.add(entries.head))
+      assert(result.isEmpty)
+    }
+
     it should "get range of entries" in {
       val all = await(book.get()).toSet
       val single = await(book.get(range = Some((0, 0))))
@@ -140,7 +145,7 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
 
   def addEntries(entries: List[BookEntry]): List[BookEntryWithId] =
     entries.map(entry => {
-      val id = await(book.add(entry))
+      val id = await(book.add(entry)).get
       BookEntryWithId(id, entry.name, entry.phone)
     })
 

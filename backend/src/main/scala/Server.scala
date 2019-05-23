@@ -117,10 +117,13 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager)(implici
     }
 
   private def createEntry(entry: BookEntry): Route = {
-    onSuccess(book.add(entry)) { id =>
-      respondWithHeader(Location(s"/phonebook/$id")) {
-        complete(StatusCodes.Created)
-      }
+    onSuccess(book.add(entry)) {
+      case Some(id) =>
+        respondWithHeader(Location(s"/phonebook/$id")) {
+          complete(StatusCodes.Created)
+        }
+      case None =>
+        complete(StatusCodes.Conflict, "phonebook already contains this entry")
     }
   }
 

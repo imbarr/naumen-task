@@ -6,7 +6,7 @@ import io.circe.generic.semiauto.{deriveDecoder, deriveEncoder}
 object Implicits {
   implicit val phoneEncoder = new Encoder[Phone] {
     override final def apply(phone: Phone): Json =
-      Json.fromString(phone.formatted)
+      Json.fromString(phone.withoutDelimiters)
   }
 
   implicit val phoneDecoder = new Decoder[Phone] {

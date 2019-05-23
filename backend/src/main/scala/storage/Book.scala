@@ -5,7 +5,7 @@ import data.{BookEntry, BookEntryWithId, Phone}
 import scala.concurrent.Future
 
 trait Book {
-  def add(entry: BookEntry): Future[Int]
+  def add(entry: BookEntry): Future[Option[Int]]
 
   def get(nameSubstring: Option[String] = None,
           phoneSubstring: Option[String] = None,

@@ -77,7 +77,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
 
   it should "create new phonebook entry" in {
     val id = 122
-    book.add _ expects entry returning Future.successful(id)
+    book.add _ expects entry returning Future.successful(Some(id))
     Post("/phonebook", entry) ~> server.route ~> check {
       assert(status == StatusCodes.Created)
       assert(header("Location").contains(Location(s"/phonebook/$id")))
@@ -219,6 +219,13 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
 
     testForAll(requests) {
       assert(status == StatusCodes.BadRequest)
+    }
+  }
+
+  it should "return 409 for same entry added" in {
+    book.add _ expects entry returning Future.successful(None)
+    Post("/phonebook", entry) ~> server.route ~> check {
+      assert(status == StatusCodes.Conflict)
     }
   }
 

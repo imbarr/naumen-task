@@ -8,10 +8,17 @@ class InMemoryBook extends Book {
   private var map = Map[Int, BookEntry]()
   private var lastId = 0
 
-  override def add(entry: BookEntry): Future[Int] = {
-    lastId += 1
-    map += lastId -> entry
-    Future.successful(lastId)
+  override def add(entry: BookEntry): Future[Option[Int]] = {
+    Future.successful {
+      if (map.values.toSet.contains(entry)) {
+        None
+      }
+      else {
+        lastId += 1
+        map += lastId -> entry
+        Some(lastId)
+      }
+    }
   }
 
   override def get(nameSubstring: Option[String],
