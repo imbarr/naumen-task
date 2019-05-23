@@ -22,10 +22,10 @@ function dataProvider(type, resource, params) {
 
 function getOne(params) {
     return dataProviderFor(
-        () => ({
+        {
             method: 'GET',
             url: `${config.serverURL}/phonebook?${params.id}`
-        }),
+        },
         response => ({
             data: {
                 id: params.id,
@@ -38,35 +38,35 @@ function getOne(params) {
 
 function getList(params) {
     return dataProviderFor(
-        () => getRequestForGetList(params),
+        getRequestForGetList(params),
         fromGetListResponse
     )
 }
 
 function create(params) {
     return dataProviderFor(
-        () => ({
+        {
             method: 'POST',
             url: `${config.serverURL}/phonebook`,
             data: JSON.stringify(params.data),
             headers: {
                 'Content-Type': 'application/json',
             }
-        }),
+        },
         response => fromCreateResponse(response, params)
     )
 }
 
 function update(params) {
     return dataProviderFor(
-        () => ({
+        {
             method: 'PATCH',
             url: `${config.serverURL}/phonebook/${params.id}`,
             data: JSON.stringify(params.data),
             headers: {
                 'Content-Type': 'application/json',
             }
-        }),
+        },
         () => ({
             data: {
                 id: params.id,
@@ -79,10 +79,10 @@ function update(params) {
 
 function deleteEntry(params) {
     return dataProviderFor(
-        () => ({
+        {
             method: 'DELETE',
             url: `${config.serverURL}/phonebook/${params.id}`
-        }),
+        },
         () => ({
             data: {
                 id: params.id,
@@ -93,8 +93,7 @@ function deleteEntry(params) {
     )
 }
 
-function dataProviderFor(getRequest, fromResponse) {
-    let request = getRequest();
+function dataProviderFor(request, fromResponse) {
     return axios(request).then(
         response =>
             fromResponse(response),
