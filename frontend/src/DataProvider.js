@@ -70,8 +70,8 @@ function update(params) {
         () => ({
             data: {
                 id: params.id,
-                name: params.data.name || params.previousData.name,
-                phone: params.data.phone || params.previousData.phone
+                name: params.data.name,
+                phone: params.data.phone
             }
         })
     )
