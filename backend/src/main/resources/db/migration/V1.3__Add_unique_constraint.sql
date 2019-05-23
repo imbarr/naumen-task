@@ -1,0 +1,1 @@
+alter table phoneNumbers add constraint noDuplicate unique (name, phone)
