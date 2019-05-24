@@ -1,14 +1,14 @@
 import java.io.Closeable
-import java.nio.file.Paths
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http.ServerBinding
 import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.Logger
-import config.{Config, DatabaseConfig, ServerConfig}
+import config.Config
+import config.Readers._
 import pureconfig.generic.auto._
 import slick.jdbc.SQLServerProfile.api.Database
-import storage.{Book, DatabaseBook}
+import storage.{Book, DatabaseBook, EntriesCleaner}
 
 import scala.concurrent.Future
 import scala.io.StdIn
@@ -28,24 +28,40 @@ object Main extends App {
       startServer(config)
   }
 
-  def startServer(config: Config): Unit = {
+  private def startServer(config: Config): Unit = {
     log.info("Starting server...")
     val database = Database.forURL(
       config.database.databaseUrl,
       config.database.backend.user,
       config.database.backend.password
     )
-    val book = new DatabaseBook(database)
-    val directoryPath = Paths.get(config.fileSystem.storage)
-    val dataSaver = new DataSaver(directoryPath)
-    val taskManager = new TaskManager()
-    val bindingFuture = new Server(book, dataSaver, taskManager).start(config.server)
+    val book = new DatabaseBook(database, getEntryLifespan(config))
+    val cleanerOption = getCleaner(database, config)
+    val bindingFuture = getServer(book, config).start(config.server)
     log.info(s"Server is up on ${config.server.interface}:${config.server.port}. Press ENTER to quit.")
     StdIn.readLine()
-    exit(bindingFuture, database, book)
+    exit(bindingFuture, Seq(database) ++ cleanerOption)
   }
 
-  private def exit(bindingFuture: Future[ServerBinding], closeables: Closeable*): Unit = {
+  private def getCleaner(database: Database, config: Config): Option[EntriesCleaner] =
+    for {
+      lifespan <- getEntryLifespan(config)
+      interval <-  getCleanupInterval(config)
+    } yield new EntriesCleaner(database, lifespan, interval)
+
+  private def getServer(book: Book, config: Config): Server = {
+    val dataSaver = new DataSaver(config.fileSystem.storage)
+    val taskManager = new TaskManager()
+    new Server(book, dataSaver, taskManager)
+  }
+
+  private def getEntryLifespan(config: Config): Option[Long] =
+    config.database.lifespan.map(_.entryLifespan.millis)
+
+  private def getCleanupInterval(config: Config): Option[Long] =
+    config.database.lifespan.flatMap(_.cleanupInterval).map(_.millis)
+
+  private def exit(bindingFuture: Future[ServerBinding], closeables: Seq[Closeable]): Unit = {
     val future = for {
       binding <- bindingFuture
       _ <- binding.unbind()
@@ -54,6 +70,6 @@ object Main extends App {
           closeable.close()
       }
     } yield Unit
-    future.onComplete(_ -> system.terminate())
+    future.onComplete(_ => system.terminate())
   }
 }
