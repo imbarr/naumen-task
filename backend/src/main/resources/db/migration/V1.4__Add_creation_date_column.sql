@@ -1,0 +1,1 @@
+alter table phoneNumbers add created datetime not null default GETDATE()
