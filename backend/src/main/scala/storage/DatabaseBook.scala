@@ -1,18 +1,20 @@
 package storage
 
-import java.io.Closeable
+import java.time.LocalDateTime
 
 import com.microsoft.sqlserver.jdbc.SQLServerException
 import data.{BookEntry, BookEntryWithId, Phone}
 import slick.jdbc.GetResult
 import slick.jdbc.SQLServerProfile.api._
-import storage.tables.PhoneNumbers
+import storage.database.Functions._
+import storage.database.tables.PhoneNumbers
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class DatabaseBook(database: Database)(implicit context: ExecutionContext) extends Book with Closeable {
+class DatabaseBook(database: Database, lifespanInMillis: Option[Long] = None)
+                  (implicit context: ExecutionContext) extends Book {
+
   private val phones = TableQuery[PhoneNumbers]
-  private val charindex = SimpleFunction.binary[String, String, Int]("charindex")
 
   override def add(entry: BookEntry): Future[Option[Int]] = {
     val add = phones.map(p => (p.name, p.phone)) += (entry.name, entry.phone.withoutDelimiters)
@@ -27,7 +29,7 @@ class DatabaseBook(database: Database)(implicit context: ExecutionContext) exten
   override def get(nameSubstring: Option[String],
                    phoneSubstring: Option[String],
                    range: Option[(Int, Int)]): Future[Seq[BookEntryWithId]] = {
-    val filtered = containingQuery(nameSubstring, phoneSubstring)
+    val filtered = unexpiredAndContainingQuery(nameSubstring, phoneSubstring)
     val cropped = range match {
       case Some((start, end)) =>
         require(start >= 0 && end >= 0 && start <= end)
@@ -42,7 +44,7 @@ class DatabaseBook(database: Database)(implicit context: ExecutionContext) exten
 
   override def getSize(nameSubstring: Option[String],
                        phoneSubstring: Option[String]): Future[Int] = {
-    val query = containingQuery(nameSubstring, phoneSubstring).length
+    val query = unexpiredAndContainingQuery(nameSubstring, phoneSubstring).length
     database.run(query.result)
   }
 
@@ -77,18 +79,18 @@ class DatabaseBook(database: Database)(implicit context: ExecutionContext) exten
     database.run(query).map(_ == 1)
   }
 
-  override def close(): Unit = {
-    ???
-  }
-
-  private def containingQuery(nameSubstring: Option[String],
-                              phoneSubstring: Option[String]) = {
-    val nameFiltered = nameSubstring match {
-      case Some(substring) => phones.filter(p => charindex(substring, p.name) > 0)
+  private def unexpiredAndContainingQuery(nameSubstring: Option[String],
+                                          phoneSubstring: Option[String]) = {
+    val unexpired = lifespanInMillis match {
+      case Some(lifespan) => phones.filter(_.created > addMillis(-lifespan, now))
       case None => phones
     }
+    val nameFiltered = nameSubstring match {
+      case Some(substring) => unexpired.filter(p => indexOf(substring, p.name) > 0)
+      case None => unexpired
+    }
     phoneSubstring.map(Phone.withoutDelimiters) match {
-      case Some(substring) => nameFiltered.filter(p => charindex(substring, p.phone) > 0)
+      case Some(substring) => nameFiltered.filter(p => indexOf(substring, p.phone) > 0)
       case None => nameFiltered
     }
   }
@@ -98,7 +100,7 @@ class DatabaseBook(database: Database)(implicit context: ExecutionContext) exten
     code == 2627 || code == 2601
   }
 
-  private def tupleToBookEntryWithId(tuple: (Int, String, String)): Option[BookEntryWithId] =
+  private def tupleToBookEntryWithId(tuple: (Int, String, String, LocalDateTime)): Option[BookEntryWithId] =
     for {
       phone <- Phone.fromString(tuple._3).toOption
       name = tuple._2
