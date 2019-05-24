@@ -1,5 +1,7 @@
 package storage
 
+import java.io.Closeable
+
 import com.microsoft.sqlserver.jdbc.SQLServerException
 import data.{BookEntry, BookEntryWithId, Phone}
 import slick.jdbc.GetResult
@@ -8,7 +10,7 @@ import storage.tables.PhoneNumbers
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class DatabaseBook(database: Database)(implicit context: ExecutionContext) extends Book {
+class DatabaseBook(database: Database)(implicit context: ExecutionContext) extends Book with Closeable {
   private val phones = TableQuery[PhoneNumbers]
   private val charindex = SimpleFunction.binary[String, String, Int]("charindex")
 
@@ -73,6 +75,10 @@ class DatabaseBook(database: Database)(implicit context: ExecutionContext) exten
   override def remove(id: Int): Future[Boolean] = {
     val query = phones.filter(_.id === id).delete
     database.run(query).map(_ == 1)
+  }
+
+  override def close(): Unit = {
+    ???
   }
 
   private def containingQuery(nameSubstring: Option[String],
