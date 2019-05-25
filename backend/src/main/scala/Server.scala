@@ -30,7 +30,6 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager, caching
       if context.request.method == HttpMethods.GET => context.request.uri
   }
 
-  val maximumNumberOfTasks = 1
   val CORSHeaders = List(
     // Wildcard as allowed origin is vulnerable to cross-site request forgery.
     // It is left like this for easier application setup.
@@ -126,10 +125,16 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager, caching
 
   private def files: Route =
     post {
-      if (taskManager.count >= maximumNumberOfTasks)
-        complete(StatusCodes.TooManyRequests, "Maximum number of asynchronous tasks exceeded")
-      else
-        savePhonebook
+      lazy val getAll = book.get()
+      lazy val task = getAll.flatMap(dataSaver.save("phonebook", _))
+      taskManager.add(task) match {
+        case Some(id) =>
+          respondWithHeader(Location(s"/tasks/$id")) {
+            complete(StatusCodes.Accepted)
+          }
+        case None =>
+          complete(StatusCodes.TooManyRequests, "Maximum number of asynchronous tasks exceeded")
+      }
     }
 
   private def taskWithId(id: Int): Route =
@@ -187,15 +192,6 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager, caching
           book.changePhoneNumber(id, wrapper.phone)
         }
       }
-
-  private def savePhonebook: Route = {
-    val getAll = book.get()
-    val task = getAll.flatMap(dataSaver.save("phonebook", _))
-    val id = taskManager.add(task)
-    respondWithHeader(Location(s"/tasks/$id")) {
-      complete(StatusCodes.Accepted)
-    }
-  }
 
   private def taskRoute(task: Future[Unit]): Route =
     complete {

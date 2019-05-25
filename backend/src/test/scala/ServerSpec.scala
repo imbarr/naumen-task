@@ -18,16 +18,14 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
   implicit val log = Logger("naumen-task-test")
   implicit val executionContext = ExecutionContext.global
 
-  class MockableDataSaver() extends DataSaver(null)
-
   var book: Book = _
-  var dataSaver: MockableDataSaver = _
+  var dataSaver: DataSaver = _
   var taskManager: TaskManager = _
   var server: Server = _
 
   before {
     book = mock[Book]
-    dataSaver = mock[MockableDataSaver]
+    dataSaver = mock[DataSaver]
     taskManager = mock[TaskManager]
     server = new Server(book, dataSaver, taskManager)
   }
@@ -128,10 +126,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
 
   it should "save phonebook" in {
     val id = 22
-    book.get _ expects(None, None, None) returning longRunning
-    taskManager.count _ expects() returning 0
-    taskManager.add _ expects * returning id
-
+    taskManager.add _ expects * returning Some(id)
     Post("/files") ~> server.route ~> check {
       assert(status == StatusCodes.Accepted)
       assert(header("Location").contains(Location(s"/tasks/$id")))
@@ -139,11 +134,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
   }
 
   it should "not save phonebook if another task in progress" in {
-    taskManager.count _ expects() returning 0
-    taskManager.count _ expects() returning 1
-    taskManager.add _ expects * returning 1
-    book.get _ expects(None, None, None) returning longRunning anyNumberOfTimes()
-    Post("/files") ~> server.route
+    taskManager.add _ expects * returning None
     Post("/files") ~> server.route ~> check {
       assert(status == StatusCodes.TooManyRequests)
     }

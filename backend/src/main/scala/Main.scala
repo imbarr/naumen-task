@@ -51,7 +51,7 @@ object Main extends App {
 
   private def getServer(book: Book, config: Config): Server = {
     val dataSaver = new DataSaver(config.fileSystem.storage)
-    val taskManager = new TaskManager()
+    val taskManager = new TaskManager(1)
     new Server(book, dataSaver, taskManager, config.server.cache)
   }
 

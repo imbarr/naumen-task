@@ -18,18 +18,16 @@ class ServerWithCachingSpec extends FlatSpec with ScalatestRouteTest with Before
   implicit val log = Logger("naumen-task-test")
   implicit val executionContext = ExecutionContext.global
 
-  class MockableDataSaver() extends DataSaver(null)
-
   val cacheConfig = CacheConfig(10, 10, Duration.Inf, Duration.Inf)
 
   var book: Book = _
-  var dataSaver: MockableDataSaver = _
+  var dataSaver: DataSaver = _
   var taskManager: TaskManager = _
   var server: Server = _
 
   before {
     book = mock[Book]
-    dataSaver = mock[MockableDataSaver]
+    dataSaver = mock[DataSaver]
     taskManager = mock[TaskManager]
     server = new Server(book, dataSaver, taskManager, Some(cacheConfig))
   }
