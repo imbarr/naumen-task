@@ -1,4 +1,4 @@
-package storage
+package storage.database
 
 import java.time.LocalDateTime
 
@@ -6,6 +6,7 @@ import com.microsoft.sqlserver.jdbc.SQLServerException
 import data.{BookEntry, BookEntryWithId, Phone}
 import slick.jdbc.GetResult
 import slick.jdbc.SQLServerProfile.api._
+import storage.Book
 import storage.database.Functions._
 import storage.database.tables.PhoneNumbers
 

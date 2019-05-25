@@ -1,3 +1,5 @@
+package filesystem
+
 import java.nio.file.{Files, Path}
 
 import io.circe.Encoder

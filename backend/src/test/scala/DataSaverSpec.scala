@@ -1,6 +1,7 @@
 import java.nio.file.{FileSystem, Files, Path}
 
 import com.google.common.jimfs.{Configuration, Jimfs}
+import filesystem.DataSaver
 import io.circe.parser.parse
 import org.scalatest.{BeforeAndAfter, FlatSpec}
 import util.TestUtils._
@@ -22,7 +23,7 @@ class DataSaverSpec extends FlatSpec with BeforeAndAfter {
     dataSaver = new DataSaver(directory)
   }
 
-  "DataSaver" should "save file with correct name" in {
+  "filesystem.DataSaver" should "save file with correct name" in {
     val data = Class("строка", 0, boolean = false)
     await(dataSaver.save("something", data))
     val files = Files.list(directory).iterator().asScala.toList

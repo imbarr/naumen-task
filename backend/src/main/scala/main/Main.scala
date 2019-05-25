@@ -1,3 +1,5 @@
+package main
+
 import java.io.Closeable
 
 import akka.actor.ActorSystem
@@ -6,9 +8,12 @@ import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.Logger
 import config.Config
 import config.Readers._
+import filesystem.DataSaver
 import pureconfig.generic.auto._
+import server.{Server, TaskManager}
 import slick.jdbc.SQLServerProfile.api.Database
-import storage.{Book, DatabaseBook, EntriesCleaner}
+import storage.Book
+import storage.database.{DatabaseBook, EntriesCleaner, Migration}
 
 import scala.concurrent.Future
 import scala.io.StdIn
@@ -38,7 +43,7 @@ object Main extends App {
     val book = new DatabaseBook(database, getEntryLifespan(config))
     val cleanerOption = getCleaner(database, config)
     val bindingFuture = getServer(book, config).start(config.server)
-    log.info(s"Server is up on ${config.server.interface}:${config.server.port}. Press ENTER to quit.")
+    log.info(s"server.Server is up on ${config.server.interface}:${config.server.port}. Press ENTER to quit.")
     StdIn.readLine()
     exit(bindingFuture, Seq(database) ++ cleanerOption)
   }

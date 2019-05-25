@@ -1,3 +1,5 @@
+package server
+
 import scala.concurrent.Future
 
 class TaskManager(maximumNumberOfTasks: Int) {

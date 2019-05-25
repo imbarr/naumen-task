@@ -1,4 +1,4 @@
-package storage
+package storage.database
 
 import java.io.Closeable
 

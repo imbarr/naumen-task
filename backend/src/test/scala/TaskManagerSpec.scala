@@ -1,4 +1,5 @@
 import org.scalatest.FlatSpec
+import server.TaskManager
 import util.TestUtils._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -6,7 +7,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class TaskManagerSpec extends FlatSpec {
   implicit val executionContext = ExecutionContext.global
 
-  "TaskManager" should "add and return tasks" in {
+  "server.TaskManager" should "add and return tasks" in {
     val manager = new TaskManager(10)
     val first = Future.successful()
     val second = Future.failed(new Exception)

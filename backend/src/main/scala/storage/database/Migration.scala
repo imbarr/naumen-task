@@ -1,3 +1,5 @@
+package storage.database
+
 import com.typesafe.scalalogging.Logger
 import config.DatabaseConfig
 import org.flywaydb.core.Flyway

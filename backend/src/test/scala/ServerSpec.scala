@@ -6,8 +6,10 @@ import akka.http.scaladsl.testkit.ScalatestRouteTest
 import com.typesafe.scalalogging.Logger
 import data.Implicits._
 import data._
+import filesystem.DataSaver
 import org.scalamock.scalatest.MockFactory
 import org.scalatest.{Assertion, BeforeAndAfter, FlatSpec}
+import server.{Server, TaskManager}
 import storage.Book
 import util.CirceMarshalling._
 import util.TestUtils._
@@ -30,7 +32,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
     server = new Server(book, dataSaver, taskManager)
   }
 
-  "Server" should "return all phonebook entries" in {
+  "server.Server" should "return all phonebook entries" in {
     book.get _ expects(None, None, None) returning Future.successful(entriesWithIds)
     Get("/phonebook") ~> server.route ~> check {
       assert(status == StatusCodes.OK)

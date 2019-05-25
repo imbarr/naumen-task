@@ -7,8 +7,9 @@ import data.BookEntry
 import org.scalatest.BeforeAndAfterAll
 import pureconfig.generic.auto._
 import slick.jdbc.SQLServerProfile.api._
+import storage.Book
 import storage.database.tables.PhoneNumbers
-import storage.{Book, DatabaseBook, EntriesCleaner}
+import storage.database.{DatabaseBook, EntriesCleaner, Migration}
 import util.TestUtils._
 
 import scala.concurrent.ExecutionContext
