@@ -52,7 +52,7 @@ object Main extends App {
   private def getServer(book: Book, config: Config): Server = {
     val dataSaver = new DataSaver(config.fileSystem.storage)
     val taskManager = new TaskManager()
-    new Server(book, dataSaver, taskManager)
+    new Server(book, dataSaver, taskManager, config.server.cache)
   }
 
   private def getEntryLifespan(config: Config): Option[Long] =

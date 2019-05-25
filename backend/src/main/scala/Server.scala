@@ -1,15 +1,18 @@
 import akka.actor.ActorSystem
+import akka.http.caching.LfuCache
+import akka.http.caching.scaladsl.{Cache, CachingSettings}
 import akka.http.scaladsl.Http
 import akka.http.scaladsl.Http.ServerBinding
 import akka.http.scaladsl.model._
 import akka.http.scaladsl.model.headers._
 import akka.http.scaladsl.server.Directives._
 import akka.http.scaladsl.server.RouteResult.route2HandlerFlow
+import akka.http.scaladsl.server.directives.CachingDirectives._
 import util.CirceMarshalling._
 import akka.http.scaladsl.server._
 import akka.stream.ActorMaterializer
 import com.typesafe.scalalogging.Logger
-import config.ServerConfig
+import config.{CacheConfig, ServerConfig}
 import data.Implicits._
 import data._
 import storage.Book
@@ -17,9 +20,15 @@ import storage.Book
 import scala.concurrent.Future
 import scala.util.{Failure, Success}
 
-class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager)(implicit log: Logger, system: ActorSystem) {
+class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager, caching: Option[CacheConfig] = None)
+            (implicit log: Logger, system: ActorSystem) {
   implicit val materializer = ActorMaterializer()
   implicit val executionContext = materializer.executionContext
+
+  val keyFunction: PartialFunction[RequestContext, Uri] = {
+    case context: RequestContext
+      if context.request.method == HttpMethods.GET => context.request.uri
+  }
 
   val maximumNumberOfTasks = 1
   val CORSHeaders = List(
@@ -49,7 +58,17 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager)(implici
       complete(StatusCodes.BadRequest, message)
     }.result()
 
-  def route: Route =
+  val route: Route =
+    caching match {
+      case Some(cacheConfig) =>
+        cache(getCache(cacheConfig), keyFunction) {
+          rootWithCORS
+        }
+      case None =>
+        rootWithCORS
+    }
+
+  private def rootWithCORS: Route =
     respondWithHeaders(CORSHeaders) {
       options {
         respondWithHeader(allowedMethodsHeader) {
@@ -215,4 +234,15 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager)(implici
           reject()
       }
     }
+
+  private def getCache(cacheConfig: CacheConfig): Cache[Uri, RouteResult] = {
+    val settings = CachingSettings(system)
+    val lfuSettings = settings.lfuCacheSettings
+      .withMaxCapacity(cacheConfig.maxCapacity)
+      .withInitialCapacity(cacheConfig.initialCapacity)
+      .withTimeToLive(cacheConfig.timeToLive)
+      .withTimeToIdle(cacheConfig.timeToIdle)
+    val newSettings = settings.withLfuCacheSettings(lfuSettings)
+    LfuCache(newSettings)
+  }
 }
