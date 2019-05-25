@@ -9,10 +9,11 @@ import pureconfig.generic.auto._
 import slick.jdbc.SQLServerProfile.api._
 import storage.database.tables.PhoneNumbers
 import storage.{Book, DatabaseBook, EntriesCleaner}
+import util.TestUtils._
 
 import scala.concurrent.ExecutionContext
 
-class DatabaseBookSpec extends BookBehaviours with BeforeAndAfterAll {
+class DatabaseSpec extends BookBehaviours with BeforeAndAfterAll {
   implicit val log = Logger("naumen-task-test")
   implicit val executionContext = ExecutionContext.global
 
@@ -27,8 +28,6 @@ class DatabaseBookSpec extends BookBehaviours with BeforeAndAfterAll {
 
   override var book: Book = new DatabaseBook(database)
   var cleaner: EntriesCleaner = _
-
-  val anotherEntries = entries.map(entry => BookEntry(entry.name + "!", entry.phone))
 
   after {
     for (entry <- added) {

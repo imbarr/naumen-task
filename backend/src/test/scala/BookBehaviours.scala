@@ -1,18 +1,9 @@
 import data.{BookEntry, BookEntryWithId, Phone}
 import org.scalatest.{Assertion, BeforeAndAfter, FlatSpec}
 import storage.Book
-
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Future}
+import util.TestUtils._
 
 abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
-  val entries = List(
-    BookEntry("John Doe", Phone.fromString("+78005553535").right.get),
-    BookEntry("Jane Doe", Phone.fromString("+79223101010").right.get),
-    BookEntry("Jane Doe", Phone.fromString("+79273101010").right.get),
-    BookEntry("Someone Else", Phone.fromString("+79223101010").right.get)
-  )
-
   val somePhone = Phone.fromString("+39 06 698577777").right.get
 
   var book: Book
@@ -148,7 +139,4 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
       val id = await(book.add(entry)).get
       BookEntryWithId(id, entry.name, entry.phone)
     })
-
-  def await[T](future: Future[T]): T =
-    Await.result(future, Duration.Inf)
 }
