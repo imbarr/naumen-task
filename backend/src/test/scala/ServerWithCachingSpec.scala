@@ -11,7 +11,7 @@ import org.scalatest.{BeforeAndAfter, FlatSpec}
 import server.{Server, TaskManager}
 import storage.Book
 import util.CirceMarshalling._
-import util.TestUtils._
+import util.TestData.entriesWithIds
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{ExecutionContext, Future}

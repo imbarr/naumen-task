@@ -10,6 +10,7 @@ import slick.jdbc.SQLServerProfile.api._
 import storage.Book
 import storage.database.tables.PhoneNumbers
 import storage.database.{DatabaseBook, EntriesCleaner, Migration}
+import util.TestData.anotherEntries
 import util.TestUtils._
 
 import scala.concurrent.ExecutionContext

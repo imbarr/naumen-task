@@ -24,7 +24,7 @@ class DataSaverSpec extends FlatSpec with BeforeAndAfter {
   }
 
   "filesystem.DataSaver" should "save file with correct name" in {
-    val data = Class("строка", 0, boolean = false)
+    val data = ClassWithEncoderAndDecoder("строка", 0, boolean = false)
     await(dataSaver.save("something", data))
     val files = Files.list(directory).iterator().asScala.toList
     val names = files.map(_.getFileName.toString)
@@ -32,12 +32,12 @@ class DataSaverSpec extends FlatSpec with BeforeAndAfter {
     val bytes = Files.readAllBytes(files.head)
     val parsed = parse(new String(bytes))
     assert(parsed.isRight)
-    val actualData = parsed.right.get.as[Class]
+    val actualData = parsed.right.get.as[ClassWithEncoderAndDecoder]
     assert(actualData.contains(data))
   }
 
   it should "chose maximum number" in {
-    val data = Class("строка", 0, boolean = false)
+    val data = ClassWithEncoderAndDecoder("строка", 0, boolean = false)
     val files = List(
       "name_22.json",
       "name_34.xml",

@@ -1,6 +1,7 @@
 import data.{BookEntry, BookEntryWithId, Phone}
 import org.scalatest.{Assertion, BeforeAndAfter, FlatSpec}
 import storage.Book
+import util.TestData.entries
 import util.TestUtils._
 
 abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {

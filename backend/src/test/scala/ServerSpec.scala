@@ -12,6 +12,7 @@ import org.scalatest.{Assertion, BeforeAndAfter, FlatSpec}
 import server.{Server, TaskManager}
 import storage.Book
 import util.CirceMarshalling._
+import util.TestData.{entriesWithIds, entry}
 import util.TestUtils._
 
 import scala.concurrent.{ExecutionContext, Future}

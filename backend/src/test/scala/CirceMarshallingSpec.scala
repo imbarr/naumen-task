@@ -17,7 +17,7 @@ class CirceMarshallingSpec extends FlatSpec {
   implicit val materializer = ActorMaterializer()
   implicit val executionContext = materializer.executionContext
 
-  val instance = Class("text", 89, boolean = false)
+  val instance = ClassWithEncoderAndDecoder("text", 89, boolean = false)
 
   "Unmarshalling" should "work for every class with decoder" in {
     val entity = HttpEntity(ContentTypes.`application/json`, instance.asJson.noSpaces)
@@ -34,7 +34,7 @@ class CirceMarshallingSpec extends FlatSpec {
     val content = strict.data.utf8String
     val json = parse(content)
     assert(json.isRight)
-    val decoded = json.right.get.as[Class]
+    val decoded = json.right.get.as[ClassWithEncoderAndDecoder]
     assert(decoded.contains(instance))
   }
 }
