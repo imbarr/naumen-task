@@ -11,7 +11,7 @@ object TestDataGenerator extends App {
   field.setAccessible(true)
   val obj = field.get(util)
   val supportedRegions = obj.asInstanceOf[Set[String]].asScala
-  println("-- This code was generated with /src/util/scala/TestDataGenerator")
+  println("-- This code was generated with backend/src/util/scala/TestDataGenerator.scala")
   for ((region, index) <- supportedRegions.toSeq.zipWithIndex) {
     val number = util.getExampleNumber(region)
     val numberString = Phone.withoutDelimiters(util.format(number, PhoneNumberFormat.INTERNATIONAL))
