@@ -1,6 +1,6 @@
 import React from 'react';
 import {Edit, SimpleForm, TextInput, DisabledInput} from 'react-admin';
-import validatePhoneNumberString from './validatePhoneNumberString';
+import validatePhoneString from './validatePhoneString';
 
 function atLeastOne(value) {
     if (!value.name && !value.phone) {
@@ -15,7 +15,7 @@ const PhoneEdit = (props) =>
         <SimpleForm validate={atLeastOne}>
             <DisabledInput source='id'/>
             <TextInput source='name'/>
-            <TextInput source='phone' validate={validatePhoneNumberString}/>
+            <TextInput source='phone' validate={validatePhoneString}/>
         </SimpleForm>
     </Edit>;
 

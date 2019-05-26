@@ -3,7 +3,7 @@ import {PhoneNumberUtil} from 'google-libphonenumber';
 const parser = PhoneNumberUtil.getInstance();
 const unknownRegion = 'ZZ';
 
-function validatePhoneNumber(phoneNumber) {
+function validatePhone(phoneNumber) {
     if (!parser.isValidNumber(phoneNumber)) {
         return 'Phone number is parsed, but invalid';
     }
@@ -12,15 +12,15 @@ function validatePhoneNumber(phoneNumber) {
     }
 }
 
-function validatePhoneNumberString(string) {
+function validatePhoneString(string) {
     if (string) {
         try {
             let phoneNumber = parser.parse(string, unknownRegion);
-            return validatePhoneNumber(phoneNumber)
+            return validatePhone(phoneNumber);
         } catch (_) {
-            return 'Phone number cannot be parsed'
+            return 'Phone number cannot be parsed';
         }
     }
 }
 
-export default validatePhoneNumberString;
+export default validatePhoneString;
