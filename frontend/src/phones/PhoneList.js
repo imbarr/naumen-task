@@ -11,6 +11,15 @@ import {
     Pagination
 } from 'react-admin';
 
+const PhoneFilter = props =>
+    <Filter {...props}>
+        <TextInput label='Name Substring' source='nameSubstring' alwaysOn/>
+        <TextInput label='Phone Substring' source='phoneSubstring' alwaysOn/>
+    </Filter>;
+
+const PhonePagination = props =>
+    <Pagination rowsPerPageOptions={[10, 25, 50, 100]} {...props}/>;
+
 const PhoneList = props =>
     <List {...props} filters={<PhoneFilter/>} pagination={<PhonePagination/>} bulkActionButtons={false}>
         <Datagrid>
@@ -21,14 +30,5 @@ const PhoneList = props =>
             <DeleteButton undoable={false}/>
         </Datagrid>
     </List>;
-
-const PhoneFilter = props =>
-    <Filter {...props}>
-        <TextInput label='Name Substring' source='nameSubstring' alwaysOn/>
-        <TextInput label='Phone Substring' source='phoneSubstring' alwaysOn/>
-    </Filter>;
-
-const PhonePagination = props =>
-    <Pagination rowsPerPageOptions={[10, 25, 50, 100]} {...props}/>;
 
 export default PhoneList
