@@ -14,7 +14,7 @@
 1) Настройте приложение в `backend/src/main/resources/application.conf`.
    Пример настроек смотрите в файле <nobr>`example-application.conf`</nobr>
 2) Создайте базу данных для приложения, например, с помощью `sqlcmd`:
-   ```
+   ```bash
    sqlcmd
    1> create database naumen
    2> go
@@ -23,7 +23,7 @@
 
 #### Веб-приложение
 1) Настройте приложение в файле `frontend/src/config.json`
-2) ```
+2) ```bash
    npm install
    npm run start
    ```
