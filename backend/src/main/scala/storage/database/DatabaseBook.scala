@@ -27,9 +27,9 @@ class DatabaseBook(database: Database, lifespanInMillis: Option[Long] = None)
     }
   }
 
-  override def get(nameSubstring: Option[String],
-                   phoneSubstring: Option[String],
-                   range: Option[(Int, Int)]): Future[Seq[BookEntryWithId]] = {
+  override def getEntries(nameSubstring: Option[String],
+                          phoneSubstring: Option[String],
+                          range: Option[(Int, Int)]): Future[Seq[BookEntryWithId]] = {
     val filtered = unexpiredAndContainingQuery(nameSubstring, phoneSubstring)
     val cropped = range match {
       case Some((start, end)) =>

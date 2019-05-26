@@ -122,7 +122,7 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager, caching
 
   private def files: Route =
     post {
-      lazy val getAll = book.get()
+      lazy val getAll = book.getEntries()
       lazy val task = getAll.flatMap(dataSaver.save("phonebook", _))
       taskManager.add(task) match {
         case Some(id) =>
@@ -159,7 +159,7 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager, caching
       (nameSubstring, phoneSubstring, startOption, endOption) =>
         (startOption, endOption) match {
           case (None, None) =>
-            complete(book.get(nameSubstring, phoneSubstring))
+            complete(book.getEntries(nameSubstring, phoneSubstring))
           case (None, _) | (_, None) =>
             reject(MalformedQueryParamRejection("start", "start and end parameters should be used together"))
           case (Some(start), Some(end)) =>
@@ -211,7 +211,7 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager, caching
       onSuccess(totalFuture) { total =>
         val totalHeader = RawHeader("X-Total-Count", total.toString)
         respondWithHeader(totalHeader) {
-          val result = book.get(nameSubstring, phoneSubstring, Some((start, end)))
+          val result = book.getEntries(nameSubstring, phoneSubstring, Some((start, end)))
           complete(result)
         }
       }

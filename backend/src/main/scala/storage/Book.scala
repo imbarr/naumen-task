@@ -7,9 +7,9 @@ import scala.concurrent.Future
 trait Book {
   def add(entry: BookEntry): Future[Option[Int]]
 
-  def get(nameSubstring: Option[String] = None,
-          phoneSubstring: Option[String] = None,
-          range: Option[(Int, Int)] = None): Future[Seq[BookEntryWithId]]
+  def getEntries(nameSubstring: Option[String] = None,
+                 phoneSubstring: Option[String] = None,
+                 range: Option[(Int, Int)] = None): Future[Seq[BookEntryWithId]]
 
   def getSize(nameSubstring: Option[String] = None,
               phoneSubstring: Option[String] = None): Future[Int]

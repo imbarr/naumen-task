@@ -35,7 +35,7 @@ class ServerWithCachingSpec extends FlatSpec with ScalatestRouteTest with Before
   }
 
   "Server (with caching)" should "cache responses for GET requests" in {
-    book.get _ expects(None, None, None) returning Future.successful(entriesWithIds)
+    book.getEntries _ expects(None, None, None) returning Future.successful(entriesWithIds)
     for (_ <- 1 to 3) {
       Get("/phonebook") ~> server.route ~> check {
         assert(status == StatusCodes.OK)

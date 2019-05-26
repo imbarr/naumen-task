@@ -34,7 +34,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
   }
 
   "Server" should "return all phonebook entries" in {
-    book.get _ expects(None, None, None) returning Future.successful(entriesWithIds)
+    book.getEntries _ expects(None, None, None) returning Future.successful(entriesWithIds)
     Get("/phonebook") ~> server.route ~> check {
       assert(status == StatusCodes.OK)
       val result = responseAs[List[BookEntryWithId]]
@@ -47,7 +47,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
     val end = 12
     val total = 100
     book.getSize _ expects(*, *) returning Future.successful(total)
-    book.get _ expects(None, None, Some((start, end))) returning Future.successful(entriesWithIds)
+    book.getEntries _ expects(None, None, Some((start, end))) returning Future.successful(entriesWithIds)
     val uri = Uri("/phonebook").withQuery(Query("start" -> start.toString, "end" -> end.toString))
     Get(uri) ~> server.route ~> check {
       assert(status == StatusCodes.OK)
@@ -79,7 +79,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
 
   it should "find entries by name substring" in {
     val substring = "Doe"
-    book.get _ expects(Some(substring), None, None) returning Future.successful(entriesWithIds)
+    book.getEntries _ expects(Some(substring), None, None) returning Future.successful(entriesWithIds)
 
     val uri = Uri("/phonebook").withQuery(Query("nameSubstring" -> substring))
     Get(uri) ~> server.route ~> check {
@@ -91,7 +91,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
 
   it should "find entries by telephone substring" in {
     val substring = "+7"
-    book.get _ expects(None, Some(substring), None) returning Future.successful(entriesWithIds)
+    book.getEntries _ expects(None, Some(substring), None) returning Future.successful(entriesWithIds)
 
     val uri = Uri("/phonebook").withQuery(Query("phoneSubstring" -> substring))
     Get(uri) ~> server.route ~> check {

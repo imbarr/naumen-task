@@ -43,11 +43,11 @@ class DatabaseSpec extends BookBehaviours with BeforeAndAfterAll {
   it should "return only unexpired entries" in {
     val lifespan = 500
     val book = new DatabaseBook(database, Some(lifespan))
-    val old = await(book.get()).toSet
+    val old = await(book.getEntries()).toSet
     Thread.sleep(lifespan)
     val fresh = addEntries(anotherEntries).toSet
     added ++= fresh
-    val result = await(book.get()).toSet
+    val result = await(book.getEntries()).toSet
     assert(fresh subsetOf result)
     assert((old intersect result) == Set())
   }
@@ -55,11 +55,11 @@ class DatabaseSpec extends BookBehaviours with BeforeAndAfterAll {
   "EntriesCleaner" should "delete only expired entries" in {
     val hundredYearsInMillis = 100 * 365 * 24 * 60 * 60 * 1000
     val interval = 500
-    val before = await(book.get())
+    val before = await(book.getEntries())
     cleaner = new EntriesCleaner(database, hundredYearsInMillis, interval)
     addWithDatetime(anotherEntries, LocalDateTime.now().minusYears(101))
     Thread.sleep(interval + 100)
-    val after = await(book.get())
+    val after = await(book.getEntries())
     assert(before.toSet == after.toSet)
   }
 

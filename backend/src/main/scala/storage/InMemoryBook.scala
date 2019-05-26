@@ -21,9 +21,9 @@ class InMemoryBook extends Book {
     }
   }
 
-  override def get(nameSubstring: Option[String],
-                   phoneSubstring: Option[String],
-                   range: Option[(Int, Int)]): Future[Seq[BookEntryWithId]] = {
+  override def getEntries(nameSubstring: Option[String],
+                          phoneSubstring: Option[String],
+                          range: Option[(Int, Int)]): Future[Seq[BookEntryWithId]] = {
     val filtered = containing(nameSubstring, phoneSubstring)
     val cropped = range match {
       case Some((start, end)) =>
