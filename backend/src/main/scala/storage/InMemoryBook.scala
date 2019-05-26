@@ -32,7 +32,9 @@ class InMemoryBook extends Book {
       case None =>
         filtered
     }
-    val result = cropped.map(join).toList
+    val result = cropped.map {
+      case (id, entry) => BookEntryWithId(id, entry.name, entry.phone)
+    }.toList
     Future.successful(result)
   }
 
@@ -66,11 +68,15 @@ class InMemoryBook extends Book {
   private def containing(nameSubstring: Option[String],
                          phoneSubstring: Option[String]): Map[Int, BookEntry] = {
     val nameFiltered = nameSubstring match {
-      case Some(substring) => map.filter(_._2.name.contains(substring))
+      case Some(substring) => map.filter {
+        case (_, entry) => entry.name.contains(substring)
+      }
       case None => map
     }
     phoneSubstring.map(Phone.withoutDelimiters) match {
-      case Some(substring) => nameFiltered.filter(_._2.phone.withoutDelimiters.contains(substring))
+      case Some(substring) => nameFiltered.filter {
+        case (_, entry) => entry.phone.withoutDelimiters.contains(substring)
+      }
       case None => nameFiltered
     }
   }
@@ -83,7 +89,4 @@ class InMemoryBook extends Book {
         map += id -> modification(entry)
         Future.successful(true)
     }
-
-  private def join(pair: (Int, BookEntry)): BookEntryWithId =
-    BookEntryWithId(pair._1, pair._2.name, pair._2.phone)
 }

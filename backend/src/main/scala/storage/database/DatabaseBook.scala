@@ -40,7 +40,7 @@ class DatabaseBook(database: Database, lifespanInMillis: Option[Long] = None)
     }
     for {
       tuples <- database.run(cropped.result)
-    } yield tuples.flatMap(tupleToBookEntryWithId)
+    } yield tuples.flatMap(toBookEntryWithId)
   }
 
   override def getSize(nameSubstring: Option[String],
@@ -57,7 +57,7 @@ class DatabaseBook(database: Database, lifespanInMillis: Option[Long] = None)
       .headOption
     for {
       tupleOption <- database.run(query)
-    } yield tupleOption.flatMap(tupleToBookEntry)
+    } yield tupleOption.flatMap(toBookEntry)
   }
 
   override def changePhoneNumber(id: Int, phone: Phone): Future[Boolean] = {
@@ -101,16 +101,20 @@ class DatabaseBook(database: Database, lifespanInMillis: Option[Long] = None)
     code == 2627 || code == 2601
   }
 
-  private def tupleToBookEntryWithId(tuple: (Int, String, String, LocalDateTime)): Option[BookEntryWithId] =
-    for {
-      phone <- Phone.fromString(tuple._3).toOption
-      name = tuple._2
-      id = tuple._1
-    } yield BookEntryWithId(id, name, phone)
+  private def toBookEntryWithId(tuple: (Int, String, String, LocalDateTime)): Option[BookEntryWithId] = {
+    tuple match {
+      case (id, name, phoneString, created) =>
+        for {
+          phone <- Phone.fromString(phoneString).toOption
+        } yield BookEntryWithId(id, name, phone)
+    }
+  }
 
-  private def tupleToBookEntry(tuple: (String, String)): Option[BookEntry] =
-    for {
-      phone <- Phone.fromString(tuple._2).toOption
-      name = tuple._1
-    } yield BookEntry(name, phone)
+  private def toBookEntry(tuple: (String, String)): Option[BookEntry] =
+    tuple match {
+      case (name, phoneString) =>
+        for {
+          phone <- Phone.fromString(phoneString).toOption
+        } yield BookEntry(name, phone)
+    }
 }

@@ -33,7 +33,7 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager, caching
       if context.request.method == HttpMethods.GET => context.request.uri
   }
 
-  val CORSHeaders = List(
+  val corsHeaders = List(
     // Wildcard as allowed origin is vulnerable to cross-site request forgery.
     // It is left like this for easier application setup.
     `Access-Control-Allow-Origin`.*,
@@ -54,12 +54,6 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager, caching
       complete(StatusCodes.InternalServerError)
   }
 
-  implicit def rejectionHandler: RejectionHandler = RejectionHandler.newBuilder()
-    .handle { case MalformedRequestContentRejection(_, cause) =>
-      val message = cause.getMessage.split('\n').head.split(':').last.trim
-      complete(StatusCodes.BadRequest, message)
-    }.result()
-
   val route: Route =
     caching match {
       case Some(cacheConfig) =>
@@ -71,7 +65,7 @@ class Server(book: Book, dataSaver: DataSaver, taskManager: TaskManager, caching
     }
 
   private def rootWithCORS: Route =
-    respondWithHeaders(CORSHeaders) {
+    respondWithHeaders(corsHeaders) {
       options {
         respondWithHeader(allowedMethodsHeader) {
           complete(StatusCodes.OK)
