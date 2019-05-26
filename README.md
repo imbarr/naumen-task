@@ -5,10 +5,10 @@
 
 ### Требования
 
-  * Java SDK 10
-  * sbt 1.0
-  * SQL Server 2017 (достаточно Express Edition)
-  * npm
+*   Java SDK 10
+*   sbt 1.0
+*   SQL Server 2017 (достаточно Express Edition)
+*   npm
 
 ### Инструкции по запуску
 1) Настройте приложение в `backend/src/main/resources/application.conf`.
@@ -119,8 +119,8 @@ PATCH /phonebook/22
 ```
 
 ### Используемые технологии
-  * [Akka](https://akka.io/)
-  * [Slick](http://slick.lightbend.com/)
-  * [Circe](https://circe.github.io/circe/)
-  * [React-Admin](https://marmelab.com/react-admin/)
-  * [libphonenumber](https://github.com/googlei18n/libphonenumber)
+*   [Akka](https://akka.io/)
+*   [Slick](http://slick.lightbend.com/)
+*   [Circe](https://circe.github.io/circe/)
+*   [React-Admin](https://marmelab.com/react-admin/)
+*   [libphonenumber](https://github.com/googlei18n/libphonenumber)
