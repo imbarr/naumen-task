@@ -1,10 +1,10 @@
 import data.{BookEntry, BookEntryWithId, Phone}
-import org.scalatest.{Assertion, BeforeAndAfter, FlatSpec}
+import org.scalatest.{Assertion, BeforeAndAfter, FlatSpec, OptionValues}
 import storage.Book
 import util.TestData.entries
 import util.TestUtils._
 
-abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
+abstract class BookBehaviours extends FlatSpec with BeforeAndAfter with OptionValues {
   val somePhone = Phone.fromString("+39 06 698577777").right.get
 
   var book: Book
@@ -126,9 +126,9 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
     }
   }
 
-  def changeEntriesTest(operation: BookEntryWithId => Set[BookEntryWithId]): Assertion = {
+  def changeEntriesTest(operation: BookEntryWithId => Set[BookEntryWithId]): Unit = {
     val oldEntries = added.toSet
-    val entry = oldEntries.head
+    val entry = oldEntries.headOption.value
     val changedEntries = operation(entry)
     val newEntries = await(book.get()).toSet
     assert(changedEntries subsetOf (newEntries diff oldEntries))
@@ -137,7 +137,7 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter {
 
   def addEntries(entries: List[BookEntry]): List[BookEntryWithId] =
     entries.map(entry => {
-      val id = await(book.add(entry)).get
+      val id = await(book.add(entry)).value
       BookEntryWithId(id, entry.name, entry.phone)
     })
 }

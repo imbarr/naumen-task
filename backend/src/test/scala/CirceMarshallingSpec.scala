@@ -6,13 +6,13 @@ import akka.http.scaladsl.model._
 import akka.stream.ActorMaterializer
 import io.circe.parser.parse
 import io.circe.syntax.EncoderOps
-import org.scalatest.FlatSpec
+import org.scalatest.{EitherValues, FlatSpec}
 import util.CirceMarshalling._
 import util.TestUtils._
 
 import scala.concurrent.duration.FiniteDuration
 
-class CirceMarshallingSpec extends FlatSpec {
+class CirceMarshallingSpec extends FlatSpec with EitherValues {
   implicit val system = ActorSystem("FlatSpec")
   implicit val materializer = ActorMaterializer()
   implicit val executionContext = materializer.executionContext
@@ -34,7 +34,7 @@ class CirceMarshallingSpec extends FlatSpec {
     val content = strict.data.utf8String
     val json = parse(content)
     assert(json.isRight)
-    val decoded = json.right.get.as[ClassWithEncoderAndDecoder]
+    val decoded = json.right.value.as[ClassWithEncoderAndDecoder]
     assert(decoded.contains(instance))
   }
 }

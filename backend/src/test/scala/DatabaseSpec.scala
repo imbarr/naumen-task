@@ -47,7 +47,6 @@ class DatabaseSpec extends BookBehaviours with BeforeAndAfterAll {
     Thread.sleep(lifespan)
     val fresh = addEntries(anotherEntries).toSet
     added ++= fresh
-    Thread.sleep(lifespan / 3)
     val result = await(book.get()).toSet
     assert(fresh subsetOf result)
     assert((old intersect result) == Set())

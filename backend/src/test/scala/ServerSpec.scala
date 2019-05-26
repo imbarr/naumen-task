@@ -33,7 +33,7 @@ class ServerSpec extends FlatSpec with ScalatestRouteTest with BeforeAndAfter wi
     server = new Server(book, dataSaver, taskManager)
   }
 
-  "server.Server" should "return all phonebook entries" in {
+  "Server" should "return all phonebook entries" in {
     book.get _ expects(None, None, None) returning Future.successful(entriesWithIds)
     Get("/phonebook") ~> server.route ~> check {
       assert(status == StatusCodes.OK)
