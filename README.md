@@ -1,11 +1,14 @@
 ## Тестовое задание на стажировку Naumen (Scala)
 
+![Build Status](https://travis-ci.org/imbarr/naumen-task.svg?branch=master)
+[![Codacy Badge](https://api.codacy.com/project/badge/Grade/7ca23f56b8954ddeb3c2dbe94e717a7c)](https://www.codacy.com/app/imbarr/naumen-task?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=imbarr/naumen-task&amp;utm_campaign=Badge_Grade)
+
 ### Требования
 
-* Java SDK 10
-* sbt 1.0
-* SQL Server 2017 (достаточно Express Edition)
-* npm
+  * Java SDK 10
+  * sbt 1.0
+  * SQL Server 2017 (достаточно Express Edition)
+  * npm
 
 ### Инструкции по запуску
 1) Настройте приложение в `backend/src/main/resources/application.conf`.
@@ -116,8 +119,8 @@ PATCH /phonebook/22
 ```
 
 ### Используемые технологии
-* [Akka](https://akka.io/)
-* [Slick](http://slick.lightbend.com/)
-* [Circe](https://circe.github.io/circe/)
-* [React-Admin](https://marmelab.com/react-admin/)
-* [libphonenumber](https://github.com/googlei18n/libphonenumber)
+  * [Akka](https://akka.io/)
+  * [Slick](http://slick.lightbend.com/)
+  * [Circe](https://circe.github.io/circe/)
+  * [React-Admin](https://marmelab.com/react-admin/)
+  * [libphonenumber](https://github.com/googlei18n/libphonenumber)
