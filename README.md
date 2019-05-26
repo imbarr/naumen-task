@@ -28,7 +28,7 @@
    npm run start
    ```
 3) Дополнительно: заполните таблицу тестовыми данными:
-   ```
+   ```bash
    sqlcmd -d naumen -i database/fill.sql
    ```
 
