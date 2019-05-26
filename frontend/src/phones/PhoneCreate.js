@@ -1,17 +1,18 @@
 import React from 'react';
 import {Create, SimpleForm, TextInput} from 'react-admin';
-import {isValid} from "../PhoneValidation";
+import validatePhoneNumberString from './validatePhoneNumberString';
 
-const PhoneCreate = props =>
+function required(value) {
+    if (!value)
+        return 'Field is required';
+}
+
+const PhoneCreate = (props) =>
     <Create {...props}>
         <SimpleForm redirect='/'>
             <TextInput source='name' validate={required}/>
-            <TextInput source='phone' validate={phone => isValid(phone) || required(phone)}/>
+            <TextInput source='phone' validate={(phone) => validatePhoneNumberString(phone) || required(phone)}/>
         </SimpleForm>
     </Create>;
 
-function required(value) {
-    return value ? undefined : 'Field is required'
-}
-
-export default PhoneCreate
+export default PhoneCreate;

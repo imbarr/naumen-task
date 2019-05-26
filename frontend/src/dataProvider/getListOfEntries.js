@@ -1,6 +1,6 @@
 import config from '../config';
 import {stringify} from 'query-string';
-import axios from 'axios'
+import axios from 'axios';
 
 function getRequestForGetList(params) {
     let {page, perPage} = params.pagination;
@@ -27,7 +27,7 @@ function fromGetListResponse(response) {
 
 function getListOfEntries(params) {
     let request = getRequestForGetList(params);
-    return axios(request).then(fromGetListResponse)
+    return axios(request).then(fromGetListResponse);
 }
 
 export default getListOfEntries;

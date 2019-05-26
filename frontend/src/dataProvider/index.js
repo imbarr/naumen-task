@@ -18,8 +18,8 @@ function dataProvider(type, resource, params) {
         case DELETE:
             return deleteEntry(params);
         default:
-            throw new Error(`Unsupported data provider request type ${type}`)
+            throw new Error(`Unsupported data provider request type ${type}`);
     }
 }
 
-export default dataProvider
+export default dataProvider;

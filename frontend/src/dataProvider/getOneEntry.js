@@ -1,5 +1,5 @@
 import config from '../config';
-import axios from 'axios'
+import axios from 'axios';
 
 function getOneEntry(params) {
     let request = {
@@ -7,14 +7,14 @@ function getOneEntry(params) {
         url: `${config.serverURL}/phonebook?${params.id}`
     };
     return axios(request).then(
-        response => ({
+        (response) => ({
             data: {
                 id: params.id,
                 name: response.data.name,
                 phone: response.data.phone
             }
         })
-    )
+    );
 }
 
 export default getOneEntry;

@@ -1,5 +1,5 @@
 import config from '../config';
-import axios from 'axios'
+import axios from 'axios';
 
 function updateEntry(params) {
     let request = {
@@ -18,7 +18,7 @@ function updateEntry(params) {
                 phone: params.data.phone
             }
         })
-    )
+    );
 }
 
 export default updateEntry;

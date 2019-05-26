@@ -1,5 +1,5 @@
 import config from '../config';
-import axios from 'axios'
+import axios from 'axios';
 
 function fromCreateResponse(response, params) {
     let id = response.headers['location'].split('/').pop();
@@ -21,7 +21,7 @@ function createEntry(params) {
             'Content-Type': 'application/json',
         }
     };
-    return axios(request).then((response) => fromCreateResponse(response, params))
+    return axios(request).then((response) => fromCreateResponse(response, params));
 }
 
 export default createEntry;

@@ -1,5 +1,5 @@
 import config from '../config';
-import axios from 'axios'
+import axios from 'axios';
 
 function deleteEntry(params) {
     let request = {
@@ -14,7 +14,7 @@ function deleteEntry(params) {
                 phone: params.previousData.phone
             }
         })
-    )
+    );
 }
 
 export default deleteEntry;
