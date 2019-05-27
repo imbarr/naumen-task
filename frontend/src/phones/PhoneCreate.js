@@ -3,7 +3,9 @@ import {Create, SimpleForm, TextInput} from 'react-admin';
 import validatePhoneString from './validatePhoneString';
 
 function required(value) {
-    if (!value) return 'Field is required';
+    if (!value) {
+        return 'Field is required';
+    }
 }
 
 const PhoneCreate = (props) =>

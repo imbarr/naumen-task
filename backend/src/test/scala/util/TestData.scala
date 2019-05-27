@@ -5,6 +5,7 @@ import data.{BookEntry, BookEntryWithId, Phone}
 object TestData {
   val entryWithId = BookEntryWithId(22, "John", Phone.fromString("+7 800 5553535").right.get)
   val entry = BookEntry("John Doe", Phone.fromString("+78005553535").right.get)
+  val phone = Phone.fromString("+39 06 698577777").right.get
 
   val entries = entry +: List(
     BookEntry("Jane Doe", Phone.fromString("+79223101010").right.get),

@@ -1,11 +1,10 @@
 import data.{BookEntry, BookEntryWithId, Phone}
-import org.scalatest.{Assertion, BeforeAndAfter, FlatSpec, OptionValues}
+import org.scalatest.{BeforeAndAfter, FlatSpec, OptionValues}
 import storage.Book
-import util.TestData.entries
+import util.TestData.{entries, entry, phone}
 import util.TestUtils._
 
 abstract class BookBehaviours extends FlatSpec with BeforeAndAfter with OptionValues {
-  val somePhone = Phone.fromString("+39 06 698577777").right.get
 
   var book: Book
   var added: List[BookEntryWithId] = _
@@ -21,7 +20,7 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter with OptionVa
     }
 
     it should "not add duplicates" in {
-      val result = await(book.add(entries.head))
+      val result = await(book.add(entry))
       assert(result.isEmpty)
     }
 
@@ -47,7 +46,7 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter with OptionVa
     }
 
     it should "get entry by id" in {
-      val entry = await(book.getEntries()).head
+      val entry = await(book.getEntries()).headOption.value
       val expected = BookEntry(entry.name, entry.phone)
       val byId = await(book.getById(entry.id))
       assert(byId.contains(expected))
@@ -68,9 +67,8 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter with OptionVa
     }
 
     it should "change phone number" in changeEntriesTest { entry =>
-      val newPhoneNumber = somePhone
-      val changedEntry = BookEntryWithId(entry.id, entry.name, newPhoneNumber)
-      val success = await(book.changePhoneNumber(entry.id, newPhoneNumber))
+      val changedEntry = BookEntryWithId(entry.id, entry.name, phone)
+      val success = await(book.changePhoneNumber(entry.id, phone))
       assert(success)
       Set(changedEntry)
     }
@@ -85,9 +83,8 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter with OptionVa
 
     it should "replace entry" in changeEntriesTest { entry =>
       val newName = entry.name + "0"
-      val newPhoneNumber = somePhone
-      val changedEntry = BookEntryWithId(entry.id, newName, newPhoneNumber)
-      val success = await(book.replace(entry.id, newName, newPhoneNumber))
+      val changedEntry = BookEntryWithId(entry.id, newName, phone)
+      val success = await(book.replace(entry.id, newName, phone))
       assert(success)
       Set(changedEntry)
     }
@@ -118,9 +115,9 @@ abstract class BookBehaviours extends FlatSpec with BeforeAndAfter with OptionVa
     it should "not change state if entry does not exist" in {
       val old = await(book.getEntries())
       val id = old.map(_.id).max + 1
-      assert(!await(book.changePhoneNumber(id, somePhone)))
+      assert(!await(book.changePhoneNumber(id, phone)))
       assert(!await(book.changeName(id, "")))
-      assert(!await(book.replace(id, "", somePhone)))
+      assert(!await(book.replace(id, "", phone)))
       assert(!await(book.remove(id)))
       assert(old.toSet == await(book.getEntries()).toSet)
     }
