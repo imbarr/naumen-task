@@ -4,12 +4,12 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/7ca23f56b8954ddeb3c2dbe94e717a7c)](https://www.codacy.com/app/imbarr/naumen-task?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=imbarr/naumen-task&amp;utm_campaign=Badge_Grade)
 
 ### Функционал
-*   <span style="color:green">Хранение данных в РБД</span>
-*   <span style="color:green">Клиентское веб-приложение</span>
-*   <span style="color:green">Сохранение данных на жесткий диск</span>
-*   <span style="color:green">Валидация номера телефона и запрет на дубликаты</span>
-*   <span style="color:green">Автоматическое удаление старых записей</span>
-*   <span style="color:yellow">Кэширование запрашиваемых данных (механизм не самописный)</span>
+*   Хранение данных в РБД
+*   Клиентское веб-приложение
+*   Сохранение данных на жесткий диск
+*   Валидация номера телефона и запрет на дубликаты
+*   Автоматическое удаление старых записей
+*   Кэширование запрашиваемых данных (**механизм не самописный**)
 
 ### Требования
 
@@ -23,7 +23,7 @@
    Пример настроек смотрите в файле <nobr>`example-application.conf`</nobr>
 2) Создайте базу данных для приложения, например, с помощью [sqlcmd](https://docs.microsoft.com/en-us/sql/linux/sql-server-linux-setup-tools?view=sql-server-2017#ubuntu):
    ```bash
-   sqlcmd
+   sqlcmd -U sa -P password
    1> create database naumen
    2> go
    ```
