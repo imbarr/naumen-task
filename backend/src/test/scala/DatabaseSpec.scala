@@ -4,7 +4,7 @@ import com.typesafe.scalalogging.Logger
 import config.Config
 import config.Readers._
 import data.BookEntry
-import org.scalatest.BeforeAndAfterAll
+import org.scalatest.{BeforeAndAfterAll, Ignore}
 import pureconfig.generic.auto._
 import slick.jdbc.SQLServerProfile.api._
 import storage.Book
@@ -15,6 +15,7 @@ import util.TestUtils._
 
 import scala.concurrent.ExecutionContext
 
+@Ignore
 class DatabaseSpec extends BookBehaviours with BeforeAndAfterAll {
   implicit val log = Logger("naumen-task-test")
   implicit val executionContext = ExecutionContext.global

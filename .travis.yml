@@ -5,8 +5,6 @@ matrix:
             - cd backend/
           scala:
             - 2.12.8
-          script:
-            - sbt compile
         - language: node_js
           before_install:
             - cd frontend/
