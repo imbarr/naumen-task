@@ -3,6 +3,12 @@
 ![Build Status](https://travis-ci.org/imbarr/naumen-task.svg?branch=master)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/7ca23f56b8954ddeb3c2dbe94e717a7c)](https://www.codacy.com/app/imbarr/naumen-task?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=imbarr/naumen-task&amp;utm_campaign=Badge_Grade)
 
+*  [Функционал](#функционал)
+*  [Требования](#требования)
+*  [Инструкции по запуску](#инструкции-по-запуску)
+*  [Примеры использования](#примеры-использования)
+*  [Используемые технологии](#используемые-технологии)
+
 ### Функционал
 *   Хранение данных в РБД
 *   Клиентское веб-приложение
@@ -125,6 +131,24 @@ PATCH /phonebook/22
 PATCH /phonebook/22
 {
   "phone": "+29022158"
+}
+```
+
+#### Сохранение данных справочника на жесткий диск
+
+```http request
+POST /files
+
+202 Accepted
+Location: /tasks/12
+```
+
+```http request
+GET /tasks/12
+
+200 OK
+{
+  "status": "in progress"
 }
 ```
 
