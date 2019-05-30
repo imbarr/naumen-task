@@ -4,6 +4,8 @@
 [![Codacy Badge](https://api.codacy.com/project/badge/Coverage/7ca23f56b8954ddeb3c2dbe94e717a7c)](https://www.codacy.com/app/imbarr/naumen-task?utm_source=github.com&utm_medium=referral&utm_content=imbarr/naumen-task&utm_campaign=Badge_Coverage)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/7ca23f56b8954ddeb3c2dbe94e717a7c)](https://www.codacy.com/app/imbarr/naumen-task?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=imbarr/naumen-task&amp;utm_campaign=Badge_Grade)
 
+[Ссылка на репозиторий](https://github.com/imbarr/naumen-task)
+
 *  [Функционал](#функционал)
 *  [Требования](#требования)
 *  [Инструкции по запуску](#инструкции-по-запуску)
