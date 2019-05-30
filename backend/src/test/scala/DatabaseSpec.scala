@@ -15,8 +15,7 @@ import util.TestUtils._
 
 import scala.concurrent.ExecutionContext
 
-@Ignore
-class DatabaseSpec extends BookBehaviours with BeforeAndAfterAll {
+class DatabaseSpec(ignore: Nothing) extends BookBehaviours with BeforeAndAfterAll {
   implicit val log = Logger("naumen-task-test")
   implicit val executionContext = ExecutionContext.global
 
