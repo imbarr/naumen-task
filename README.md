@@ -1,13 +1,20 @@
 ## Тестовое задание на стажировку Naumen (Scala)
 
 ![Build Status](https://travis-ci.org/imbarr/naumen-task.svg?branch=master)
+[![Codacy Badge](https://api.codacy.com/project/badge/Coverage/7ca23f56b8954ddeb3c2dbe94e717a7c)](https://www.codacy.com/app/imbarr/naumen-task?utm_source=github.com&utm_medium=referral&utm_content=imbarr/naumen-task&utm_campaign=Badge_Coverage)
 [![Codacy Badge](https://api.codacy.com/project/badge/Grade/7ca23f56b8954ddeb3c2dbe94e717a7c)](https://www.codacy.com/app/imbarr/naumen-task?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=imbarr/naumen-task&amp;utm_campaign=Badge_Grade)
 
 *  [Функционал](#функционал)
 *  [Требования](#требования)
 *  [Инструкции по запуску](#инструкции-по-запуску)
 *  [Примеры использования](#примеры-использования)
+   *  [Добавление имени и телефона в справочник](#добавление-имени-и-телефона-в-справочник)
+   *  [Запросить данные из справочника](#запросить-данные-из-справочника)
+   *  [Удалить запись по id](#удалить-запись-по-id)
+   *  [Изменить телефон или имя](#изменить-телефон-или-имя)
+   *  [Сохранение данных справочника на жесткий диск](#сохранение-данных-справочника-на-жесткий-диск)
 *  [Используемые технологии](#используемые-технологии)
+*  [Возможные улучшения](#возможные-улучшения)
 
 ### Функционал
 *   Хранение данных в РБД
@@ -21,7 +28,7 @@
 
 *   Java SDK 10
 *   sbt 1.0
-*   SQL Server 2017 (достаточно Express Edition)
+*   [SQL Server 2017](https://docs.microsoft.com/en-us/sql/linux/quickstart-install-connect-ubuntu?view=sql-server-2017) (достаточно Express Edition)
 *   npm
 
 ### Инструкции по запуску
@@ -158,3 +165,8 @@ GET /tasks/12
 *   [Circe](https://circe.github.io/circe/)
 *   [React-Admin](https://marmelab.com/react-admin/)
 *   [libphonenumber](https://github.com/googlei18n/libphonenumber)
+
+### Возможные улучшения
+1) Интеграционные тесты через Docker (в первую очередь, взаимодействие с БД)
+2) Запрос данных из БД через reactive streams
+3) Добавление функции сохранения данных на жесткий диск в веб-приложение
